@@ -25,6 +25,8 @@ set -e
 CLOUDSTACK_VERSION="24dcf2948c2d4cdd98fcda0f766d82f40eee8be1"
 
 progname=$0
+progdir=$(dirname $progname)
+progdir=$(cd $progdir && pwd -P || echo $progdir)
 
 function finish {
    echo "\n\nReceived SIGINT. Exiting..."
@@ -156,7 +158,7 @@ function run_cloudstack () {
 function provision_cloudstack () {
    pushd $PWD
    cd /home/vagrant/cloudstack/tools/devcloud
-   python ../marvin/marvin/deployDataCenter.py -i devcloud.cfg
+   python ../marvin/marvin/deployDataCenter.py -i $progdir/devcloud.cfg
    popd
 }
 
