@@ -84,7 +84,7 @@ function base_setup () {
 
   sudo /etc/init.d/mysql start
 
-  sudo apt-get install -y uuid-runtime genisoimage python-setuptools python-dev git ca-certificates maven openjdk-7-jdk
+  sudo apt-get install -y uuid-runtime genisoimage python-setuptools python-dev git ca-certificates maven openjdk-7-jdk python-pip
 
   # maven builds can fail with openjdk-6
   sudo apt-get remove -y openjdk-6-jre-headless
