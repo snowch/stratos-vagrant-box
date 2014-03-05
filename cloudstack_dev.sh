@@ -21,7 +21,8 @@ set -e
 # TODO the getops loop to check this has been set as an environment
 # variable in .profile. If not, the value to be passed in as an argument
 # to this script
-CLOUDSTACK_VERSION="4.2.1"
+
+CLOUDSTACK_VERSION="24dcf2948c2d4cdd98fcda0f766d82f40eee8be1"
 
 progname=$0
 
@@ -138,7 +139,7 @@ function clean_cloudstack_db () {
 function maven_clean_install () {
    pushd $PWD
    cd /home/vagrant/cloudstack
-   mvn clean install -P developer,systemvm -Dmaven.test.skip=true
+   mvn clean install -P developer,systemvm
    
    MARVIN=$(ls -1 /home/vagrant/cloudstack/tools/marvin/dist/Marvin-*.tar.gz)
    sudo pip install $MARVIN
