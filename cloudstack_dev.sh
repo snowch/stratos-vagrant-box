@@ -135,6 +135,8 @@ function clean_cloudstack_db () {
    pushd $PWD
    cd /home/vagrant/cloudstack
    mvn -P developer -pl developer,tools/devcloud -Ddeploydb
+   # change host from 192.168.56.1 to .10 for running cloudstack on devcloud
+   sudo mysql -e "update configuration set value = '192.168.55.10' where name = 'host';" cloud
    popd
 }
 
