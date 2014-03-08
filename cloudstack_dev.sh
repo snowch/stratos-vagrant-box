@@ -127,6 +127,9 @@ function checkout_cloudstack() {
      /home/vagrant/cloudstack/scripts/vm/hypervisor/xenserver/vhd-util
 
   chmod +x /home/vagrant/cloudstack/scripts/vm/hypervisor/xenserver/vhd-util
+  
+  sed -i -e 's/^reboot -f$/#reboot -f/g' \
+      /home/vagrant/cloudstack/scripts/vm/hypervisor/xenserver/xenheartbeat.sh
 
   popd
 }
