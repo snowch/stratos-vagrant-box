@@ -92,6 +92,15 @@ function base_setup () {
   sudo apt-get remove -y openjdk-6-jre-headless
 
   sudo ln -sf /usr/bin/genisoimage /usr/bin/mkisofs
+  
+  # set dom0 max memory to 2Gb
+  grep 'GRUB_CMDLINE_XEN="dom0_mem=400M,max:2048M dom0_max_vcpus=1"' /etc/default/grub
+  if [ $? != 0 ]
+  then
+     sudo sed -i -e 's/^GRUB_CMDLINE_XEN.*$/GRUB_CMDLINE_XEN="dom0_mem=400M,max:2048M dom0_max_vcpus=1"/g' /etc/default/grub
+     sudo update-grub2
+     sudo reboot
+  fi
 
   popd
 }
