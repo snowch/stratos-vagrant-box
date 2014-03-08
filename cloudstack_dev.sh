@@ -101,6 +101,8 @@ function base_setup () {
      sudo sed -i -e 's/^GRUB_CMDLINE_XEN.*$/GRUB_CMDLINE_XEN="dom0_mem=400M,max:2048M dom0_max_vcpus=1"/g' /etc/default/grub
      sudo update-grub2
      sudo reboot
+     # stop script from running further while rebooting
+     sleep 60
   fi
   set -e
 
