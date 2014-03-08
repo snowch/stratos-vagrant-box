@@ -93,6 +93,7 @@ function base_setup () {
 
   sudo ln -sf /usr/bin/genisoimage /usr/bin/mkisofs
   
+  set +e
   # set dom0 max memory to 2Gb
   grep 'GRUB_CMDLINE_XEN="dom0_mem=400M,max:2048M dom0_max_vcpus=1"' /etc/default/grub
   if [ $? != 0 ]
@@ -101,6 +102,7 @@ function base_setup () {
      sudo update-grub2
      sudo reboot
   fi
+  set -e
 
   popd
 }
