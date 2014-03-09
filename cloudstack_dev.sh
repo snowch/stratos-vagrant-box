@@ -54,6 +54,26 @@ function base_setup () {
 
   pushd $PWD
 
+  set +e
+  # set dom0 max memory to 2Gb
+  grep 'GRUB_CMDLINE_XEN="dom0_mem=400M,max:2048M dom0_max_vcpus=1"' /etc/default/grub
+  if [ $? != 0 ]
+  then
+     echo
+     echo -e "\e[32mIMPORTANT\e[39m"
+     echo "Updating XEN grub command line and rebooting."
+     echo "Please re-run this script '${progname} -${progarg}' after the reboot to continue the setup."
+     echo
+     read -p "Press [Enter] key to continue..."
+     echo
+     sudo sed -i -e 's/^GRUB_CMDLINE_XEN.*$/GRUB_CMDLINE_XEN="dom0_mem=400M,max:2048M dom0_max_vcpus=1"/g' /etc/default/grub
+     sudo update-grub2
+     sudo reboot
+     # stop script from running further while rebooting
+     sleep 60
+  fi
+  set -e
+
   [ -d /home/vagrant/Downloads ] || mkdir /home/vagrant/Downloads
 
   chown -R vagrant /home/vagrant/Downloads
@@ -94,26 +114,6 @@ function base_setup () {
 
   sudo ln -sf /usr/bin/genisoimage /usr/bin/mkisofs
   
-  set +e
-  # set dom0 max memory to 2Gb
-  grep 'GRUB_CMDLINE_XEN="dom0_mem=400M,max:2048M dom0_max_vcpus=1"' /etc/default/grub
-  if [ $? != 0 ]
-  then
-     echo
-     echo -e "\e[32mIMPORTANT\e[39m"
-     echo "Updating XEN grub command line and rebooting."
-     echo "Please re-run this script '${progname} -${progarg}' after the reboot to continue the setup."
-     echo
-     read -p "Press [Enter] key to continue..."
-     echo
-     sudo sed -i -e 's/^GRUB_CMDLINE_XEN.*$/GRUB_CMDLINE_XEN="dom0_mem=400M,max:2048M dom0_max_vcpus=1"/g' /etc/default/grub
-     sudo update-grub2
-     sudo reboot
-     # stop script from running further while rebooting
-     sleep 60
-  fi
-  set -e
-
   popd
 }
 
