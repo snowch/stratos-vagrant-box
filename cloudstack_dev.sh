@@ -62,7 +62,7 @@ function base_setup () {
      echo
      echo -e "\e[32mIMPORTANT\e[39m"
      echo "Updating XEN grub command line and rebooting."
-     echo "Please '${progname} -${progarg}' after the reboot to continue the setup."
+     echo "Run '${progname} -${progarg}' after the reboot to continue the setup."
      echo
      read -p "Press [Enter] key to continue..."
      echo
