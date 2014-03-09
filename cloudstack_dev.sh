@@ -32,19 +32,19 @@ progarg=''
 function finish {
    echo "\n\nReceived SIGINT. Exiting..."
    exit
-   # TODO is any cleanup required?
 }
 
 trap finish SIGINT
 
 function usage () {
    cat <<EOF
-Usage: $progname [-i] [-c] [-r] [-p] 
+Usage: $progname -[i|c|r|p|d]
 where:
     -i checkout and build
     -c clean cloudstack database
     -r run cloudstack
     -p provision cloudstack
+    -d cloudstack development environment
 EOF
    exit 0
 }
@@ -192,6 +192,15 @@ function provision_cloudstack () {
    popd
 }
 
+function development_environment () {
+   pushd $PWD
+   sudo apt-get install -y task-lxde-desktop eclipse-jdt
+   cd /home/vagrant/cloudstack
+   mvn eclipse:eclipse
+   popd
+}
+
+
 function initial_setup() {
    base_setup
    checkout_cloudstack
@@ -211,6 +220,7 @@ while getopts 'icrp' flag; do
     c) clean_cloudstack_db ; exit $? ;;
     r) run_cloudstack ; exit $? ;;
     p) provision_cloudstack ; exit $? ;;
+    d) development_environment ; exit $? ;;
     h) usage ; exit $? ;;
     \?) usage ; exit $? ;;
     *) usage ; exit $? ;;
