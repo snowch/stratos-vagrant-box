@@ -197,6 +197,12 @@ function development_environment () {
    sudo apt-get install -y --no-install-recommends task-lxde-desktop eclipse-jdt
    cd /home/vagrant/cloudstack
    mvn eclipse:eclipse
+   echo
+   echo -e "\e[32mIMPORTANT\e[39m"
+   read -p "Reboot required. Press [Enter] key to continue..."
+   echo
+   sudo reboot
+   sleep 60
    popd
 }
 
