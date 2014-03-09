@@ -185,7 +185,7 @@ function provision_cloudstack () {
    pushd $PWD
    if [ ! -e $progdir/devcloud.cfg ]
    then
-      wget https://github.com/imduffy15/devcloud/blob/v0.2/devcloud.cfg
+      wget https://github.com/imduffy15/devcloud/raw/v0.2/devcloud.cfg
    fi
    cd /home/vagrant/cloudstack/tools/devcloud
    python ../marvin/marvin/deployDataCenter.py -i $progdir/devcloud.cfg
