@@ -213,7 +213,7 @@ function initial_setup() {
    #provision_cloudstack 
 }
 
-while getopts 'icrp' flag; do
+while getopts 'icrpd' flag; do
   progarg=${flag}
   case "${flag}" in
     i) initial_setup ; exit $? ;;
