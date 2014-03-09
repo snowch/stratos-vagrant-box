@@ -104,6 +104,8 @@ function base_setup () {
      echo "Updating XEN grub command line and rebooting."
      echo "Please re-run this script '${progname} -${progarg}' after the reboot to continue the setup."
      echo
+     read -p "Press [Enter] key to continue..."
+     echo
      sudo sed -i -e 's/^GRUB_CMDLINE_XEN.*$/GRUB_CMDLINE_XEN="dom0_mem=400M,max:2048M dom0_max_vcpus=1"/g' /etc/default/grub
      sudo update-grub2
      sudo reboot
