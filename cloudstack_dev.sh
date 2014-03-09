@@ -27,6 +27,7 @@ CLOUDSTACK_VERSION="24dcf2948c2d4cdd98fcda0f766d82f40eee8be1"
 progname=$0
 progdir=$(dirname $progname)
 progdir=$(cd $progdir && pwd -P || echo $progdir)
+progarg=''
 
 function finish {
    echo "\n\nReceived SIGINT. Exiting..."
@@ -98,6 +99,11 @@ function base_setup () {
   grep 'GRUB_CMDLINE_XEN="dom0_mem=400M,max:2048M dom0_max_vcpus=1"' /etc/default/grub
   if [ $? != 0 ]
   then
+     echo
+     echo -e "\e[32mIMPORTANT\e[39m"
+     echo "Updating XEN grub command line and rebooting."
+     echo "Please re-run this script '${progname} -${progarg}' after the reboot to continue the setup."
+     echo
      sudo sed -i -e 's/^GRUB_CMDLINE_XEN.*$/GRUB_CMDLINE_XEN="dom0_mem=400M,max:2048M dom0_max_vcpus=1"/g' /etc/default/grub
      sudo update-grub2
      sudo reboot
@@ -197,6 +203,7 @@ function initial_setup() {
 }
 
 while getopts 'icrp' flag; do
+  progarg=${flag}
   case "${flag}" in
     i) initial_setup ; exit $? ;;
     c) clean_cloudstack_db ; exit $? ;;
