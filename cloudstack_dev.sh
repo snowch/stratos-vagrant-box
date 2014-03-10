@@ -107,7 +107,7 @@ function base_setup () {
 
   sudo /etc/init.d/mysql start
 
-  sudo apt-get install -y uuid-runtime genisoimage python-setuptools python-dev git ca-certificates maven openjdk-7-jdk python-pip
+  sudo apt-get install -y uuid-runtime genisoimage python-setuptools python-dev git ca-certificates maven openjdk-7-jdk python-pip expect
 
   # maven builds can fail with openjdk-6
   sudo apt-get remove -y openjdk-6-jre-headless
@@ -229,11 +229,34 @@ function initial_setup() {
    checkout_cloudstack
    maven_clean_install
    clean_cloudstack_db
-   run_cloudstack 
-   # FIXME
-   # run_cloudstack will need to be put into the background
-   # before running provision_cloudstack
-   #provision_cloudstack 
+   # run jetty, when jetty has started provision cloudstack
+expect <<EOF
+   cd /home/vagrant/cloudstack
+   set timeout 12000
+   match_max 1000000
+  
+   set success_string "*Started Jetty Server*"
+
+   spawn "/home/vagrant/cloudstack_dev.sh" "-r"
+   expect {
+     -re "(\[^\r]*\)\r\n" 
+     {
+       set current_line \$expect_out(buffer)
+
+       if { [ string match "\$success_string" "\$current_line" ] } {
+          puts "exiting with matched string \$current_line"
+          flush stdout
+          send "/home/vagrant/cloudstack_dev.sh -p"
+       } else { 
+          puts "discarding \$current_line"
+          exp_continue 
+       }
+     }
+     eof { puts "eof"; exit 1; }
+     timeout { puts "timeout"; exit 1; }
+   }
+EOF
+   development_environment
 }
 
 while getopts 'icrpd' flag; do
