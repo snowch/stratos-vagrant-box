@@ -204,7 +204,12 @@ function development_environment () {
    # get all the directories that can be imported into eclipse and append them
    # with '-import'
 
-   IMPORTS=$(find /home/vagrant/cloudstack/ -type f -name .project)
+   if [ -e /home/vagrant/workspace ]
+   then
+      IMPORTS='' # importing fails if workspace already has imported projects 
+   else
+      IMPORTS=$(find /home/vagrant/cloudstack/ -type f -name .project)
+   fi
 
    # Although it is possible to import multiple directories with one 
    # invocation of the test.myapp.App, this fails if one of the imports
@@ -213,13 +218,11 @@ function development_environment () {
    do
       IMPORT="$(dirname $item)/"
   
-      # perform the import - allow import to continue on failure
-      set -e
+      # perform the import 
       eclipse -nosplash \
          -application test.myapp.App \
          -data /home/vagrant/workspace \
          -import $IMPORT
-      set +e
    done
    mvn -Declipse.workspace=/home/vagrant/workspace/ eclipse:configure-workspace
    popd
@@ -246,11 +249,9 @@ expect <<EOF
        set current_line \$expect_out(buffer)
 
        if { [ string match "\$success_string" "\$current_line" ] } {
-          puts "exiting with matched string \$current_line"
           flush stdout
-          send "/home/vagrant/cloudstack_dev.sh -p"
+          send "/home/vagrant/cloudstack_dev.sh -p\r"
        } else { 
-          puts "discarding \$current_line"
           exp_continue 
        }
      }
