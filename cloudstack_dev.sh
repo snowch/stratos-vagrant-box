@@ -194,7 +194,7 @@ function provision_cloudstack () {
 
 function development_environment () {
    pushd $PWD
-   sudo apt-get install -y --no-install-recommends task-lxde-desktop eclipse-jdt
+   sudo apt-get install -y --no-install-recommends task-lxde-desktop eclipse-jdt xrdp
    cd /home/vagrant/cloudstack
    mvn eclipse:eclipse
    echo
