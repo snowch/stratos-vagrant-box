@@ -20,6 +20,7 @@
 
 
 $script = <<SCRIPT
+rm -f cloudstack_dev.sh
 wget --no-check-certificate https://raw.github.com/snowch/devcloud-script/master/cloudstack_dev.sh
 chmod +x cloudstack_dev.sh
 SCRIPT
