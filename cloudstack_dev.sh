@@ -53,6 +53,8 @@ EOF
 function base_setup () {
 
   pushd $PWD
+  
+  echo -e "\e[32mPerforming base setup.\e[39m"
 
   set +e
   # set dom0 max memory to 2Gb
@@ -119,6 +121,8 @@ function base_setup () {
 
 function checkout_cloudstack() {
 
+  echo -e "\e[32mChecking out cloudstack.\e[39m"
+
   if [ ! -e /home/vagrant/Downloads/vhd-util ]
   then
      # get the vhd-util - we will need this later
@@ -156,6 +160,9 @@ function checkout_cloudstack() {
 }
 
 function clean_cloudstack_db () {
+   
+   echo -e "\e[32mRecreating Cloudstack Database.\e[39m"
+   
    pushd $PWD
    cd /home/vagrant/cloudstack
    mvn -P developer -pl developer,tools/devcloud -Ddeploydb
@@ -165,6 +172,9 @@ function clean_cloudstack_db () {
 }
 
 function maven_clean_install () {
+   
+   echo -e "\e[32mRunning 'mvn clean install'.\e[39m"
+   
    pushd $PWD
    cd /home/vagrant/cloudstack
    mvn clean install -P developer,systemvm
@@ -175,6 +185,9 @@ function maven_clean_install () {
 }
 
 function run_cloudstack () {
+   
+   echo -e "\e[32mRunning Cloudstack.\e[39m"
+   
    pushd $PWD
    cd /home/vagrant/cloudstack
    mvn -pl :cloud-client-ui jetty:run
@@ -182,6 +195,9 @@ function run_cloudstack () {
 }
 
 function provision_cloudstack () {
+   
+   echo -e "\e[32mProvisioning Cloudstack.\e[39m"
+   
    pushd $PWD
    if [ ! -e $progdir/devcloud.cfg ]
    then
@@ -193,6 +209,9 @@ function provision_cloudstack () {
 }
 
 function development_environment () {
+   
+   echo -e "\e[32mSetting up development environment.\e[39m"
+   
    pushd $PWD
    sudo apt-get install -y --no-install-recommends task-lxde-desktop eclipse-jdt xrdp
    cd /home/vagrant/cloudstack
@@ -230,6 +249,9 @@ function development_environment () {
 
 
 function initial_setup() {
+   
+   echo -e "\e[32mPerforming initial setup.\e[39m"
+   
    base_setup
    checkout_cloudstack
    maven_clean_install
