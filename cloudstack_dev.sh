@@ -201,7 +201,7 @@ function provision_cloudstack () {
    pushd $PWD
    if [ ! -e $progdir/devcloud.cfg ]
    then
-      wget https://github.com/imduffy15/devcloud/raw/v0.2/devcloud.cfg
+      wget -P $progdir https://github.com/imduffy15/devcloud/raw/v0.2/devcloud.cfg
    fi
    cd /home/vagrant/cloudstack/tools/devcloud
    python ../marvin/marvin/deployDataCenter.py -i $progdir/devcloud.cfg
@@ -257,6 +257,7 @@ function initial_setup() {
    maven_clean_install
    clean_cloudstack_db
    # run jetty, when jetty has started provision cloudstack
+   # FIXME this is really kludgy
 expect <<EOF
    cd /home/vagrant/cloudstack
    set timeout 12000
@@ -272,7 +273,9 @@ expect <<EOF
 
        if { [ string match "\$success_string" "\$current_line" ] } {
           flush stdout
-          send "/home/vagrant/cloudstack_dev.sh -p\r"
+          [ exec /home/vagrant/cloudstack_dev.sh -p ]
+          send \003
+          expect eof
        } else { 
           exp_continue 
        }
