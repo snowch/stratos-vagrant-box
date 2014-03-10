@@ -40,7 +40,7 @@ Vagrant.configure("2") do |config|
   config.vm.provider "virtualbox" do |v|
     v.customize ["modifyvm", :id, "--memory", 4096]
     v.customize [ "modifyvm", :id, "--nicpromisc2", "allow-all" ]
-    v.gui = true
+    #v.gui = true
   end
   
   config.vm.provision "shell", inline: $script, privileged: false
