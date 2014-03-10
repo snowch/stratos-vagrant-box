@@ -213,11 +213,13 @@ function development_environment () {
    do
       IMPORT="$(dirname $item)/"
   
-      # perform the import
+      # perform the import - allow import to continue on failure
+      set -e
       eclipse -nosplash \
          -application test.myapp.App \
          -data /home/vagrant/workspace \
          -import $IMPORT
+      set +e
    done
    mvn -Declipse.workspace=/home/vagrant/workspace/ eclipse:configure-workspace
    popd
