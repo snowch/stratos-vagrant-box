@@ -197,12 +197,29 @@ function development_environment () {
    sudo apt-get install -y --no-install-recommends task-lxde-desktop eclipse-jdt xrdp
    cd /home/vagrant/cloudstack
    mvn eclipse:eclipse
-   echo
-   echo -e "\e[32mIMPORTANT\e[39m"
-   read -p "Reboot required. Press [Enter] key to continue..."
-   echo
-   sudo reboot
-   sleep 60
+   # import projects
+   sudo wget -c -P /usr/share/eclipse/dropins/ \
+      https://github.com/snowch/test.myapp/raw/master/test.myapp_1.0.0.jar
+      
+   # get all the directories that can be imported into eclipse and append them
+   # with '-import'
+
+   IMPORTS=$(find /home/vagrant/cloudstack/ -type f -name .project)
+
+   # Although it is possible to import multiple directories with one 
+   # invocation of the test.myapp.App, this fails if one of the imports
+   # was not successful.  Using a for loop is slower, but more robust
+   for item in ${IMPORTS[*]}; 
+   do
+      IMPORT="$(dirname $item)/"
+  
+      # perform the import
+      eclipse -nosplash \
+         -application test.myapp.App \
+         -data /home/vagrant/workspace \
+         -import $IMPORT
+   done
+   mvn -Declipse.workspace=/home/vagrant/workspace/ eclipse:configure-workspace
    popd
 }
 
