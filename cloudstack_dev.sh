@@ -261,7 +261,7 @@ function force_clean () {
    
    rm -rf /home/vagrant/workspace
    
-   sudo mysql -e "drop database cloud;"
+   sudo mysql -e "drop database if exists cloud;"
    popd
 }
 
