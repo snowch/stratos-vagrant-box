@@ -293,7 +293,8 @@ expect <<EOF
           puts "Started provisioning cloudstack."
           exec /home/vagrant/cloudstack_dev.sh -p
           puts "Finished provisioning cloudstack. Stopping Jetty."
-          send \003 # CTRL-C
+          # CTRL-C
+          send \003
           expect eof
        } else { 
           exp_continue 
