@@ -214,7 +214,7 @@ function development_environment () {
    echo -e "\e[32mSetting up development environment.\e[39m"
    
    pushd $PWD
-   sudo apt-get install -y --no-install-recommends task-lxde-desktop eclipse-jdt xrdp
+   sudo apt-get install -y --no-install-recommends task-lxde-desktop eclipse-jdt xrdp iceweasel
    cd /home/vagrant/cloudstack
    mvn eclipse:eclipse
    # import projects
