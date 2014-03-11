@@ -273,8 +273,10 @@ expect <<EOF
 
        if { [ string match "\$success_string" "\$current_line" ] } {
           flush stdout
-          [ exec /home/vagrant/cloudstack_dev.sh -p ]
-          send \003
+          puts "Started provisioning cloudstack."
+          exec /home/vagrant/cloudstack_dev.sh -p
+          puts "Finished provisioning cloudstack. Stopping Jetty."
+          send \003 # CTRL-C
           expect eof
        } else { 
           exp_continue 
