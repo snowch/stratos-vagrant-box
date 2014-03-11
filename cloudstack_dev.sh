@@ -38,13 +38,14 @@ trap finish SIGINT
 
 function usage () {
    cat <<EOF
-Usage: $progname -[i|c|r|p|d]
+Usage: $progname -[i|c|r|p|d|f]
 where:
     -i checkout and build
     -c clean cloudstack database
     -r run cloudstack
     -p provision cloudstack
     -d cloudstack development environment
+    -f force clean
 EOF
    exit 0
 }
@@ -247,6 +248,20 @@ function development_environment () {
    popd
 }
 
+function force_clean () {
+   
+   pushd $PWD
+   echo -e "\e[32mIMPORTANT\e[39m"
+   echo "Reset your environment?  This will lose any changes you have made."
+   echo
+   read -p "Please close eclipse and press [Enter] key to continue..."
+   
+   cd /home/vagrant/cloudstack
+   mvn clean
+   
+   rm -rf /home/vagrant/workspace
+   popd
+}
 
 function initial_setup() {
    
@@ -289,7 +304,7 @@ EOF
    development_environment
 }
 
-while getopts 'icrpd' flag; do
+while getopts 'icrpdf' flag; do
   progarg=${flag}
   case "${flag}" in
     i) initial_setup ; exit $? ;;
@@ -297,6 +312,7 @@ while getopts 'icrpd' flag; do
     r) run_cloudstack ; exit $? ;;
     p) provision_cloudstack ; exit $? ;;
     d) development_environment ; exit $? ;;
+    f) force_clean ; exit $? ;;
     h) usage ; exit $? ;;
     \?) usage ; exit $? ;;
     *) usage ; exit $? ;;
