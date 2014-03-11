@@ -261,6 +261,8 @@ function force_clean () {
    
    rm -rf /home/vagrant/workspace
    
+   rm -rf /home/vagrant/.m2
+   
    sudo mysql -e "drop database if exists cloud;"
    popd
 }
@@ -291,7 +293,7 @@ expect <<EOF
        if { [ string match "\$success_string" "\$current_line" ] } {
           flush stdout
           puts "Started provisioning cloudstack."
-          exec /home/vagrant/cloudstack_dev.sh -p
+          set exec_out [exec /home/vagrant/cloudstack_dev.sh -p]
           puts "Finished provisioning cloudstack. Stopping Jetty."
           # CTRL-C
           send \003
