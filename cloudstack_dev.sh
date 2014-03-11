@@ -254,12 +254,14 @@ function force_clean () {
    echo -e "\e[32mIMPORTANT\e[39m"
    echo "Reset your environment?  This will lose any changes you have made."
    echo
-   read -p "Please close eclipse and press [Enter] key to continue..."
+   read -p "Please close eclipse, stop any maven jobs and press [Enter] key to continue..."
    
    cd /home/vagrant/cloudstack
    mvn clean
    
    rm -rf /home/vagrant/workspace
+   
+   sudo mysql -e "drop database cloud;"
    popd
 }
 
