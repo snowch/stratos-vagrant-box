@@ -279,7 +279,8 @@ function initial_setup() {
    # FIXME this is really kludgy
 expect <<EOF
    cd /home/vagrant/cloudstack
-   set timeout 12000
+   # 20 mins timeout for jetty to start and devcloud to be provisioned
+   set timeout 1200
    match_max 1000000
   
    set success_string "*Started Jetty Server*"
