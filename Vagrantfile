@@ -18,12 +18,15 @@
 # specific language governing permissions and limitations
 # under the License.
 
+GUEST_IP="192.168.56.10"
 
-$script = <<SCRIPT
-rm -f cloudstack_dev.sh
-wget --no-check-certificate https://raw.github.com/snowch/devcloud-script/master/cloudstack_dev.sh
-chmod +x cloudstack_dev.sh
-SCRIPT
+require 'net/scp'
+
+# hack to get script onto guest without shared folders
+Net::SCP.start(GUEST_IP, "vagrant", :password => "vagrant") do |scp|
+    scp.upload! "cloudstack_dev.sh", "cloudstack_dev.sh"
+    scp.upload! "stratos_dev.sh", "stratos_dev.sh"
+end
 
 
 Vagrant.configure("2") do |config|
@@ -36,14 +39,15 @@ Vagrant.configure("2") do |config|
   config.vm.box_url = "https://github.com/imduffy15/devcloud/releases/download/v0.2/devcloud.box"
 
   config.vm.hostname = "devcloud.cloudstack.org"
-  config.vm.network :private_network, :auto_config => false , :ip => "192.168.56.10"
+  config.vm.network :private_network, :auto_config => false , :ip => GUEST_IP
 
   config.vm.provider "virtualbox" do |v|
     v.customize ["modifyvm", :id, "--memory", 4096]
     v.customize [ "modifyvm", :id, "--nicpromisc2", "allow-all" ]
     #v.gui = true
   end
-  
-  config.vm.provision "shell", inline: $script, privileged: false
-  
+
+  config.vm.provision "shell", inline: "chmod +x /home/vagrant/cloudstack_dev.sh"
+  config.vm.provision "shell", inline: "chmod +x /home/vagrant/stratos_dev.sh"
+
 end
