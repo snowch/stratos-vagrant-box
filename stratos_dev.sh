@@ -21,6 +21,9 @@ set -e
 
 STRATOS_VERSION="master"
 STRATOS_PACK_PATH="/home/vagrant/stratos-packs"
+STRATOS_SETUP_PATH="/home/vagrant/stratos-installer"
+STRATOS_SOURCE_PATH="/home/vagrant/incubator-stratos"
+STRATOS_PATH="/home/vagrant/stratos"
 WSO2_CEP_FILE="wso2cep-3.0.0.zip"
 WSO2_MB_FILE="wso2mb-2.1.0.zip"
 MYSQLJ_FILE="mysql-connector-java-5.1.29.jar"
@@ -30,7 +33,7 @@ progdir=$(dirname $progname)
 progdir=$(cd $progdir && pwd -P || echo $progdir)
 progarg=''
 
-export MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=500m -Xdebug -Xrunjdwp:transport=dt_socket,address=8888,server=y,suspend=n"
+MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=500m -Xdebug -Xrunjdwp:transport=dt_socket,address=8888,server=y,suspend=n"
 
 function finish {
    echo "\n\nReceived SIGINT. Exiting..."
@@ -70,23 +73,32 @@ function downloads () {
   fi
 }
 
+function installer() {
+  pushd $PWD
+  cp -rpf $STRATOS_SOURCE_PATH/tools/stratos-installer $STRATOS_SETUP_PATH
+  mv $STRATOS_SOURCE_PATH/products/stratos-manager/modules/distribution/target/apache-stratos-manager-*.zip $STRATOS_PACK_PATH/
+  mv $STRATOS_SOURCE_PATH/products/cloud-controller/modules/distribution/target/apache-stratos-cc-*.zip $STRATOS_PACK_PATH/
+  mv $STRATOS_SOURCE_PATH/products/autoscaler/modules/distribution/target/apache-stratos-autoscaler-*.zip $STRATOS_PACK_PATH/
+  mv $STRATOS_SOURCE_PATH/extensions/cep/stratos-cep-extension/target/org.apache.stratos.cep.extension-*.jar $STRATOS_PACK_PATH
+  popd
+}
+
 function checkout() {
 
   echo -e "\e[32mChecking out.\e[39m"
 
   pushd $PWD
-  cd /home/vagrant
 
-  if [ ! -d /home/vagrant/incubator-stratos ]
+  if [ ! -d $STRATOS_SOURCE_PATH ]
   then
-     git clone https://git-wip-us.apache.org/repos/asf/incubator-stratos.git
+     git clone https://git-wip-us.apache.org/repos/asf/incubator-stratos.git $STRATOS_SOURCE_PATH
   else
-     cd /home/vagrant/incubator-stratos
+     cd $STRATOS_SOURCE_PATH
      git checkout master
      git pull
   fi
 
-  cd /home/vagrant/cloudstack
+  cd $STRATOS_SOURCE_PATH
   git checkout ${STRATOS_VERSION}
 
   popd
