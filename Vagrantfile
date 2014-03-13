@@ -18,36 +18,56 @@
 # specific language governing permissions and limitations
 # under the License.
 
-GUEST_IP="192.168.56.10"
-
 require 'net/scp'
 
-# hack to get script onto guest without shared folders
-Net::SCP.start(GUEST_IP, "vagrant", :password => "vagrant") do |scp|
-    scp.upload! "cloudstack_dev.sh", "cloudstack_dev.sh"
-    scp.upload! "stratos_dev.sh", "stratos_dev.sh"
-end
-
+CLOUDSTACK_IP="192.168.56.10"
+STRATOS_IP="192.168.56.5"
 
 Vagrant.configure("2") do |config|
 
-  # disable mounting vagrant folder, no guest additions installed
-  config.vm.synced_folder ".", "/vagrant", disabled: true
+  config.vm.define "cloudstack" do |cloudstack|
 
-  config.vm.box = "DevCloud"
+    # disable mounting vagrant folder, no guest additions installed
+    cloudstack.vm.synced_folder ".", "/vagrant", disabled: true
 
-  config.vm.box_url = "https://github.com/imduffy15/devcloud/releases/download/v0.2/devcloud.box"
+    # disable checking for vbguest version because vbguest is
+    # not supported in a xen dom0 
+    if Vagrant.has_plugin?("vagrant-vbguest")
+      cloudstack.vbguest.auto_update = false
+    end
 
-  config.vm.hostname = "devcloud.cloudstack.org"
-  config.vm.network :private_network, :auto_config => false , :ip => GUEST_IP
+    cloudstack.vm.box = "DevCloud"
+    cloudstack.vm.box_url = "https://github.com/imduffy15/devcloud/releases/download/v0.2/devcloud.box"
 
-  config.vm.provider "virtualbox" do |v|
-    v.customize ["modifyvm", :id, "--memory", 4096]
-    v.customize [ "modifyvm", :id, "--nicpromisc2", "allow-all" ]
-    #v.gui = true
+    cloudstack.vm.hostname = "devcloud.cloudstack.org"
+    cloudstack.vm.network :private_network, :auto_config => false , :ip => CLOUDSTACK_IP
+
+    cloudstack.vm.provider "virtualbox" do |v|
+      v.customize ["modifyvm", :id, "--memory", 4096]
+      v.customize [ "modifyvm", :id, "--nicpromisc2", "allow-all" ]
+      #v.gui = true
+    end
+
+    # hack to get script onto guest without shared folders
+    if ARGV[0] == "provision"
+      Net::SCP.start(CLOUDSTACK_IP, "vagrant", :password => "vagrant") do |scp|
+        scp.upload! "cloudstack_dev.sh", "cloudstack_dev.sh"
+      end
+      cloudstack.vm.provision "shell", inline: "chmod +x /home/vagrant/cloudstack_dev.sh"
+      cloudstack.vm.provision "shell", inline: ". /home/vagrant/cloudstack_dev.sh -i", privileged: false
+    end
+
   end
 
-  config.vm.provision "shell", inline: "chmod +x /home/vagrant/cloudstack_dev.sh"
-  config.vm.provision "shell", inline: "chmod +x /home/vagrant/stratos_dev.sh"
+
+  config.vm.define "stratos" do |stratos|
+
+    stratos.vm.box = "opscode-ubuntu-12.04"
+    stratos.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-12.04_chef-provisionerless.box"
+    stratos.vm.hostname = "paas.stratos.org"
+    stratos.vm.network :private_network, :auto_config => false , :ip => STRATOS_IP
+
+    stratos.vm.provision "shell", inline: "ln -sf /vagrant/stratos_dev.sh /home/vagrant/stratos_dev.sh"
+  end
 
 end

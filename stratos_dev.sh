@@ -34,7 +34,7 @@ progdir=$(dirname $progname)
 progdir=$(cd $progdir && pwd -P || echo $progdir)
 progarg=''
 
-MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=500m -Xdebug -Xrunjdwp:transport=dt_socket,address=8888,server=y,suspend=n"
+export MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=500m -Xdebug -Xrunjdwp:transport=dt_socket,address=8888,server=y,suspend=n"
 
 function finish {
    echo "\n\nReceived SIGINT. Exiting..."
@@ -42,6 +42,19 @@ function finish {
 }
 
 trap finish SIGINT
+
+function main() {
+  while getopts 'icrpdf' flag; do
+    progarg=${flag}
+    case "${flag}" in
+      i) initial_setup ; exit $? ;;
+      h) usage ; exit $? ;;
+      \?) usage ; exit $? ;;
+      *) usage ; exit $? ;;
+    esac
+  done
+  usage
+}
 
 function usage () {
    cat <<EOF
@@ -77,11 +90,8 @@ function downloads () {
 function prerequisites() {
 
   echo -e "\e[32mInstall prerequisite software\e[39m"
+  sudo apt-get install -y --no-install-recommends git maven openjdk-7-jdk
 
-  wget -P /tmp http://apt.puppetlabs.com/puppetlabs-release-wheezy.deb
-  sudo dpkg -i /tmp/puppetlabs-release-wheezy.deb 
-  sudo apt-get update
-  sudo apt-get install -y puppet
 }
 
 function installer() {
@@ -103,6 +113,9 @@ function installer() {
   sed -i "s:^export as_ip=.*:export as_ip=$IP_ADDR:g" $STRATOS_SETUP_PATH/conf/setup.conf
   sed -i "s:^export sm_ip=.*:export sm_ip=$IP_ADDR:g" $STRATOS_SETUP_PATH/conf/setup.conf
   sed -i "s:^export sm_ip=.*:export sm_ip=$IP_ADDR:g" $STRATOS_SETUP_PATH/conf/setup.conf
+  sed -i "s:^export puppet_ip=.*:export puppet_ip=$IP_ADDR:g" $STRATOS_SETUP_PATH/conf/setup.conf
+  sed -i "s:^export puppet_hostname=.*:export puppet_hostname=devcloud:g" $STRATOS_SETUP_PATH/conf/setup.conf
+  sed -i "s:^export puppet_environment=.*:export puppet_environment=XXXXXXXXXXXXXXXXX:g" $STRATOS_SETUP_PATH/conf/setup.conf
 
   popd
 }
@@ -165,14 +178,4 @@ function initial_setup() {
    maven_clean_install
 }
 
-while getopts 'icrpdf' flag; do
-  progarg=${flag}
-  case "${flag}" in
-    i) initial_setup ; exit $? ;;
-    h) usage ; exit $? ;;
-    \?) usage ; exit $? ;;
-    *) usage ; exit $? ;;
-  esac
-done
-
-usage
+main "$@"

@@ -93,18 +93,18 @@ function base_setup () {
   cd /home/vagrant
 
   # the rest of the profile settings are for maven
-  grep '^CATALINA_HOME' .profile || echo 'export CATALINA_HOME=~/apache-tomcat-6.0.33' >> .profile
+  grep '^export CATALINA_HOME' .profile || echo 'export CATALINA_HOME=~/apache-tomcat-6.0.33' >> .profile
 
-  grep '^CATALINA_BASE' .profile || echo 'export CATALINA_BASE=~/apache-tomcat-6.0.33' >> .profile
+  grep '^export CATALINA_BASE' .profile || echo 'export CATALINA_BASE=~/apache-tomcat-6.0.33' >> .profile
 
   if [ "$(arch)" == "x86_64" ]
   then
-    grep '^JAVA_HOME' .profile || echo 'export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64' >> .profile
+    grep '^export JAVA_HOME' .profile || echo 'export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64' >> .profile
   else
-    grep '^JAVA_HOME' .profile || echo 'export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-i386' >> .profile
+    grep '^export JAVA_HOME' .profile || echo 'export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-i386' >> .profile
   fi
 
-  grep '^MAVEN_OPTS' .profile || echo 'export MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=500m -Xdebug -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n"' >> .profile
+  grep '^export MAVEN_OPTS' .profile || echo 'export MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=500m -Xdebug -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n"' >> .profile
 
   . .profile
 
@@ -204,8 +204,7 @@ function provision_cloudstack () {
    then
       wget -P $progdir https://github.com/imduffy15/devcloud/raw/v0.2/devcloud.cfg
    fi
-   cd /home/vagrant/cloudstack/tools/devcloud
-   python ../marvin/marvin/deployDataCenter.py -i $progdir/devcloud.cfg
+   python /home/vagrant/cloudstack/tools/marvin/marvin/deployDataCenter.py -i $progdir/devcloud.cfg
    popd
 }
 
@@ -307,7 +306,6 @@ expect <<EOF
      timeout { puts "timeout"; exit 1; }
    }
 EOF
-   development_environment
 }
 
 while getopts 'icrpdf' flag; do
