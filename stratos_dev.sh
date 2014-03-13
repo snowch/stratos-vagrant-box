@@ -20,6 +20,10 @@ set -e
 
 
 STRATOS_VERSION="master"
+STRATOS_PACK_PATH="/home/vagrant/stratos-packs"
+WSO2_CEP_FILE="wso2cep-3.0.0.zip"
+WSO2_MB_FILE="wso2mb-2.1.0.zip"
+MYSQLJ_FILE="mysql-connector-java-5.1.29.jar"
 
 progname=$0
 progdir=$(dirname $progname)
@@ -44,6 +48,27 @@ EOF
    exit 0
 }
 
+function downloads () {
+
+  echo -e "\e[32mDownload prerequisite software\e[39m"
+
+  [ -d $STRATOS_PACK_PATH ] || mkdir $STRATOS_PACK_PATH
+
+  if [ ! -e $STRATOS_PACK_PATH/$WSO2_CEP_FILE ]
+  then
+     wget -q -P $STRATOS_PACK_PATH http://people.apache.org/~chsnow/$WSO2_CEP_FILE
+  fi
+  
+  if [ ! -e $STRATOS_PACK_PATH/$WSO2_MB_FILE ]
+  then
+     wget -q -P $STRATOS_PACK_PATH http://people.apache.org/~chsnow/$WSO2_MB_FILE
+  fi
+
+  if [ ! -e $STRATOS_PACK_PATH/$MYSQLJ_FILE ]
+  then
+     wget -q -P $STRATOS_PACK_PATH http://repo1.maven.org/maven2/mysql/mysql-connector-java/5.1.29/$MYSQLJ_FILE
+  fi
+}
 
 function checkout() {
 
@@ -98,7 +123,8 @@ function force_clean () {
 function initial_setup() {
    
    echo -e "\e[32mPerforming initial setup.\e[39m"
-   
+
+   downloads   
    checkout
    maven_clean_install
 }
