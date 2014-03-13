@@ -27,6 +27,7 @@ STRATOS_PATH="/home/vagrant/stratos"
 WSO2_CEP_FILE="wso2cep-3.0.0.zip"
 WSO2_MB_FILE="wso2mb-2.1.0.zip"
 MYSQLJ_FILE="mysql-connector-java-5.1.29.jar"
+IP_ADDR="192.168.56.10"
 
 progname=$0
 progdir=$(dirname $progname)
@@ -73,6 +74,16 @@ function downloads () {
   fi
 }
 
+function prerequisites() {
+
+  echo -e "\e[32mInstall prerequisite software\e[39m"
+
+  wget -P /tmp http://apt.puppetlabs.com/puppetlabs-release-wheezy.deb
+  sudo dpkg -i /tmp/puppetlabs-release-wheezy.deb 
+  sudo apt-get update
+  sudo apt-get install -y puppet
+}
+
 function installer() {
   pushd $PWD
   cp -rpf $STRATOS_SOURCE_PATH/tools/stratos-installer $STRATOS_SETUP_PATH
@@ -80,6 +91,19 @@ function installer() {
   mv $STRATOS_SOURCE_PATH/products/cloud-controller/modules/distribution/target/apache-stratos-cc-*.zip $STRATOS_PACK_PATH/
   mv $STRATOS_SOURCE_PATH/products/autoscaler/modules/distribution/target/apache-stratos-autoscaler-*.zip $STRATOS_PACK_PATH/
   mv $STRATOS_SOURCE_PATH/extensions/cep/stratos-cep-extension/target/org.apache.stratos.cep.extension-*.jar $STRATOS_PACK_PATH
+
+  sed -i "s:^export setup_path=.*:export setup_path=$STRATOS_SETUP_PATH:g" $STRATOS_SETUP_PATH/conf/setup.conf
+  sed -i "s:^export stratos_pack_path=.*:export stratos_pack_path=$STRATOS_PACK_PATH:g" $STRATOS_SETUP_PATH/conf/setup.conf
+  sed -i "s:^export stratos_path=.*:export stratos_path=$STRATOS_PATH:g" $STRATOS_SETUP_PATH/conf/setup.conf
+  sed -i "s:^export JAVA_HOME=.*:export JAVA_HOME=$JAVA_HOME:g" $STRATOS_SETUP_PATH/conf/setup.conf
+  sed -i "s:^export host_user=.*:export host_user=vagrant:g" $STRATOS_SETUP_PATH/conf/setup.conf
+  sed -i "s:^export mb_ip=.*:export mb_ip=$IP_ADDR:g" $STRATOS_SETUP_PATH/conf/setup.conf
+  sed -i "s:^export cep_ip=.*:export cep_ip=$IP_ADDR:g" $STRATOS_SETUP_PATH/conf/setup.conf
+  sed -i "s:^export cc_ip=.*:export cc_ip=$IP_ADDR:g" $STRATOS_SETUP_PATH/conf/setup.conf
+  sed -i "s:^export as_ip=.*:export as_ip=$IP_ADDR:g" $STRATOS_SETUP_PATH/conf/setup.conf
+  sed -i "s:^export sm_ip=.*:export sm_ip=$IP_ADDR:g" $STRATOS_SETUP_PATH/conf/setup.conf
+  sed -i "s:^export sm_ip=.*:export sm_ip=$IP_ADDR:g" $STRATOS_SETUP_PATH/conf/setup.conf
+
   popd
 }
 
@@ -135,8 +159,8 @@ function force_clean () {
 function initial_setup() {
    
    echo -e "\e[32mPerforming initial setup.\e[39m"
-
    downloads   
+   prerequisites
    checkout
    maven_clean_install
 }
