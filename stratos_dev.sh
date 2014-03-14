@@ -19,7 +19,7 @@
 set -e
 
 
-STRATOS_VERSION="master"
+STRATOS_VERSION="4.0.0-incubating-m7"
 STRATOS_PACK_PATH="/home/vagrant/stratos-packs"
 STRATOS_SETUP_PATH="/home/vagrant/stratos-installer"
 STRATOS_SOURCE_PATH="/home/vagrant/incubator-stratos"
@@ -90,6 +90,7 @@ function downloads () {
 function prerequisites() {
 
   echo -e "\e[32mInstall prerequisite software\e[39m"
+  sudo apt-get update
   sudo apt-get install -y --no-install-recommends git maven openjdk-7-jdk
 
 }
