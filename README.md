@@ -19,7 +19,7 @@ This project contains scripts to provision cloudstack and stratos runtimes.
  - ```vagrant ssh cloudstack``` # log in to the cloudstack box
  - ```./cloudstack_dev.sh -r``` # runs cloudstack
 
-Now open a browser from your host to 'http://192.168.56.10:8080/client' and login with 'admin/password'.  You should be able to create an instance (don't attach storage to the image - this isn't working).
+Now open a browser from your host to 'http://192.168.56.10:8080/client' and login with 'admin/password'. After logging in, check "Infrastructure > System VMs".  When the VM State shows "Running" and Agent State shows "Up" for both VMs, you should be able to create an instance (don't add a disk offering to the image - this isn't working yet).
 
 - Start and Provision **Stratos** box:
 
