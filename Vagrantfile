@@ -67,7 +67,7 @@ Vagrant.configure("2") do |config|
     stratos.vm.hostname = "paas.stratos.org"
     stratos.vm.network :private_network, :auto_config => false , :ip => STRATOS_IP
 
-    stratos.vm.provision "shell", inline: "ln -sf /vagrant/stratos_dev.sh /home/vagrant/stratos_dev.sh"
+    stratos.vm.provision "shell", inline: "ln -sf /vagrant/stratos_dev.sh /home/vagrant/stratos_dev.sh", privileged: false
   end
 
 end
