@@ -95,6 +95,24 @@ function prerequisites() {
 
 }
 
+function puppet_setup() {
+
+  pushd $PWD
+  cd /home/vagrant
+
+  if [ ! -d puppetinstall ]
+  then
+    git clone https://github.com/thilinapiy/puppetinstall
+    cd puppetinstall
+    echo '' | sudo ./puppetinstall -m -d stratos.com
+
+    sudo cp -R $STRATOS_SOURCE_PATH/tools/puppet/manifests/* /etc/puppet/manifests/
+    sudo cp -R $STRATOS_SOURCE_PATH/tools/puppet/modules/* /etc/puppet/modules/
+  fi
+  popd 
+
+}
+
 function installer() {
   pushd $PWD
   cp -rpf $STRATOS_SOURCE_PATH/tools/stratos-installer $STRATOS_SETUP_PATH
@@ -176,6 +194,7 @@ function initial_setup() {
    downloads   
    prerequisites
    checkout
+   puppet_setup # has a dependency on stratos checkout
    maven_clean_install
 }
 
