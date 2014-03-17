@@ -18,9 +18,9 @@
 
 set -e
 
-# TODO the getops loop to check this has been set as an environment
-# variable in .profile. If not, the value to be passed in as an argument
-# to this script
+# TODO use the getops loop to check if CLOUDSTACK_VERSION has been set 
+# as an environment variable in .profile. If not, the value to be passed 
+# in as an argument to this script
 
 CLOUDSTACK_VERSION="24dcf2948c2d4cdd98fcda0f766d82f40eee8be1"
 
@@ -274,12 +274,12 @@ function initial_setup() {
    checkout_cloudstack
    maven_clean_install
    clean_cloudstack_db
-   # run jetty, when jetty has started provision cloudstack
-   # FIXME this is really kludgy
+
+# run jetty, when jetty has started provision cloudstack
 expect <<EOF
    cd /home/vagrant/cloudstack
    # 20 mins timeout for jetty to start and devcloud to be provisioned
-   set timeout 1200
+   set timeout 2400
    match_max 1000000
   
    set success_string "*Started Jetty Server*"
@@ -291,13 +291,21 @@ expect <<EOF
        set current_line \$expect_out(buffer)
 
        if { [ string match "\$success_string" "\$current_line" ] } {
+          # Jetty has started ok, so lets provision cloudstack now
           flush stdout
           puts "Started provisioning cloudstack."
-          set exec_out [exec /home/vagrant/cloudstack_dev.sh -p]
-          puts "Finished provisioning cloudstack. Stopping Jetty."
-          # CTRL-C
-          send \003
-          expect eof
+
+          set status [catch {exec /home/vagrant/cloudstack_dev.sh -p} output]
+          if {\$status == 0 || [string equal $::errorCode NONE] } {
+             # Provision cloudstack was successful.
+             puts "Finished provisioning cloudstack. Stopping Jetty."
+             # CTRL-C
+             send \003
+             expect eof
+          } else {
+             puts "Error running Expect"
+             puts \$output
+          }
        } else { 
           exp_continue 
        }
@@ -306,6 +314,7 @@ expect <<EOF
      timeout { puts "timeout"; exit 1; }
    }
 EOF
+   echo -e "\e[32mFinished initial setup.\e[39m"
 }
 
 while getopts 'icrpdf' flag; do
