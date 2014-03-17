@@ -135,6 +135,7 @@ function installer() {
   sed -i "s:^export puppet_ip=.*:export puppet_ip=$IP_ADDR:g" $STRATOS_SETUP_PATH/conf/setup.conf
   sed -i "s:^export puppet_hostname=.*:export puppet_hostname=devcloud:g" $STRATOS_SETUP_PATH/conf/setup.conf
   sed -i "s:^export puppet_environment=.*:export puppet_environment=XXXXXXXXXXXXXXXXX:g" $STRATOS_SETUP_PATH/conf/setup.conf
+  # TODO finish this section
 
   popd
 }
