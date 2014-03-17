@@ -5,6 +5,8 @@ Stratos + Cloudstack Environment
 
 This project contains scripts to provision cloudstack and stratos runtimes.
 
+**WARNING:** This environment is a work-in-progress.  When it is ready for public use, a github release will be created.
+
 ### Usage
 
 - Clone this project: ```git clone git@github.com:snowch/devcloud-script.git  & cd devcloud-script```
