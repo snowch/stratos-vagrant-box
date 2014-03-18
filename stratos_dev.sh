@@ -24,9 +24,14 @@ STRATOS_PACK_PATH="/home/vagrant/stratos-packs"
 STRATOS_SETUP_PATH="/home/vagrant/stratos-installer"
 STRATOS_SOURCE_PATH="/home/vagrant/incubator-stratos"
 STRATOS_PATH="/home/vagrant/stratos"
+WSO2_CEP_URL="http://people.apache.org/~chsnow"
 WSO2_CEP_FILE="wso2cep-3.0.0.zip"
+WSO2_MB_URL="http://people.apache.org/~chsnow"
 WSO2_MB_FILE="wso2mb-2.1.0.zip"
+MYSQLJ_URL="http://repo1.maven.org/maven2/mysql/mysql-connector-java/5.1.29"
 MYSQLJ_FILE="mysql-connector-java-5.1.29.jar"
+ANDES_CLIENT_JAR_URL="http://maven.wso2.org/nexus/content/groups/wso2-public/org/wso2/andes/wso2/andes-client/0.13.wso2v8/"
+ANDES_CLIENT_JAR_FILE="andes-client-0.13.wso2v8.jar"
 IP_ADDR="192.168.56.10"
 MB_PORT=5672
 CEP_PORT=7611
@@ -74,17 +79,22 @@ function downloads () {
 
   if [ ! -e $STRATOS_PACK_PATH/$WSO2_CEP_FILE ]
   then
-     wget -q -P $STRATOS_PACK_PATH http://people.apache.org/~chsnow/$WSO2_CEP_FILE
+     wget -q -P $STRATOS_PACK_PATH $WSO2_CEP_URL/$WSO2_CEP_FILE
   fi
   
   if [ ! -e $STRATOS_PACK_PATH/$WSO2_MB_FILE ]
   then
-     wget -q -P $STRATOS_PACK_PATH http://people.apache.org/~chsnow/$WSO2_MB_FILE
+     wget -q -P $STRATOS_PACK_PATH $WSO2_MB_URL/$WSO2_MB_FILE
   fi
 
   if [ ! -e $STRATOS_PACK_PATH/$MYSQLJ_FILE ]
   then
-     wget -q -P $STRATOS_PACK_PATH http://repo1.maven.org/maven2/mysql/mysql-connector-java/5.1.29/$MYSQLJ_FILE
+     wget -q -P $STRATOS_PACK_PATH $MYSQLJ_URL/$MYSQLJ_FILE
+  fi
+
+  if [ ! -e $STRATOS_PACK_PATH/$ANDES_CLIENT_JAR_FILE ]
+  then
+     wget -q -P $STRATOS_PACK_PATH $ANDES_CLIENT_JAR_URL/$ANDES_CLIENT_JAR_FILE
   fi
 }
 
