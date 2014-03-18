@@ -140,6 +140,8 @@ function puppet_setup() {
 
 function cartridge_setup() {
 
+  echo "TODO: cartridge setup"
+
 }
 
 function installer() {
