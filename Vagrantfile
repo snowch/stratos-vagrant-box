@@ -25,6 +25,9 @@ STRATOS_IP="192.168.56.5"
 
 Vagrant.configure("2") do |config|
 
+  # 
+  # Define a box for running cloudstack
+  #
   config.vm.define "cloudstack" do |cloudstack|
 
     # disable mounting vagrant folder, no guest additions installed
@@ -36,19 +39,24 @@ Vagrant.configure("2") do |config|
       cloudstack.vbguest.auto_update = false
     end
 
+    # use a pre-existing box that is pre-configured for cloudstack
     cloudstack.vm.box = "DevCloud"
     cloudstack.vm.box_url = "https://github.com/imduffy15/devcloud/releases/download/v0.2/devcloud.box"
 
     cloudstack.vm.hostname = "devcloud.cloudstack.org"
+
+    # devcloud needs a private network that is not managed by vagrant
     cloudstack.vm.network :private_network, :auto_config => false , :ip => CLOUDSTACK_IP
 
+    # allow enough memory for cloudstack and set the nic to promiscous
     cloudstack.vm.provider "virtualbox" do |v|
       v.customize ["modifyvm", :id, "--memory", 4096]
       v.customize [ "modifyvm", :id, "--nicpromisc2", "allow-all" ]
       #v.gui = true
     end
 
-    # hack to get script onto guest without shared folders
+    # virtualbox tools don't work on the xen kernel, so vagrant shared folders do not work
+    # this is a hack to get the cloudstack setup script onto guest without shared folders
     if ARGV[0] == "provision"
       Net::SCP.start(CLOUDSTACK_IP, "vagrant", :password => "vagrant") do |scp|
         scp.upload! "cloudstack_dev.sh", "cloudstack_dev.sh"
@@ -59,14 +67,23 @@ Vagrant.configure("2") do |config|
 
   end
 
-
+  # 
+  # create a box for setting up Stratos
+  #
   config.vm.define "stratos" do |stratos|
 
+    # use the opscode vagrant box definitions because they have a 40Gb disk which should be enough for
+    # stratos. ubuntu cloud images only have 10Gb which is not enough.
     stratos.vm.box = "opscode-ubuntu-12.04"
     stratos.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-12.04_chef-provisionerless.box"
+    
+    # 
     stratos.vm.hostname = "paas.stratos.org"
-    stratos.vm.network :private_network, :auto_config => false , :ip => STRATOS_IP
+    
+    # put stratos on the same private network as cloudstack so they can talk to each other
+    stratos.vm.network :private_network, :ip => STRATOS_IP
 
+    # make the stratos setup script available in the /home/vagrant folder
     stratos.vm.provision "shell", inline: "ln -sf /vagrant/stratos_dev.sh /home/vagrant/stratos_dev.sh", privileged: false
   end
 
