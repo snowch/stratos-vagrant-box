@@ -104,7 +104,8 @@ function base_setup () {
     grep '^export JAVA_HOME' .profile || echo 'export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-i386' >> .profile
   fi
 
-  grep '^export MAVEN_OPTS' .profile || echo 'export MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=500m -Xdebug -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n"' >> .profile
+  #grep '^export MAVEN_OPTS' .profile || echo 'export MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=500m -Xdebug -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n"' >> .profile
+  grep '^export MAVEN_OPTS' .profile || echo 'export MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=500m"' >> .profile
 
   . .profile
 
@@ -178,7 +179,7 @@ function maven_clean_install () {
    
    pushd $PWD
    cd /home/vagrant/cloudstack
-   mvn clean install -P developer,systemvm
+   mvn clean install -P developer,systemvm -DskipTests
    
    MARVIN=$(ls -1 /home/vagrant/cloudstack/tools/marvin/dist/Marvin-*.tar.gz)
    sudo pip install $MARVIN
