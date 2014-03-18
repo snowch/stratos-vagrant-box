@@ -117,20 +117,20 @@ function puppet_setup() {
     sudo sh -c 'echo "*.stratos.com" > /etc/puppet/autosign.conf'
 
     # TODO move hardcoded strings to variables
-    sudo sed -i -E 's:(\s*\$local_package_dir.*=).*$:\1 "/home/vagrant/packs":g' /etc/puppet/manifests/nodes.pp
-    sudo sed -i -E "s:(\s*mb_ip.*=>).*$:\1 \"$IP_ADDR\":g" /etc/puppet/manifests/nodes.pp
-    sudo sed -i -E "s:(\s*mb_port.*=>).*$:\1 \"5672\":g" /etc/puppet/manifests/nodes.pp
-    sudo sed -i -E "s:(\s*cep_ip.*=>).*$:\1 \"$IP_ADDR\":g" /etc/puppet/manifests/nodes.pp
-    sudo sed -i -E "s:(\s*cep_port.*=>).*$:\1 \"7611\":g" /etc/puppet/manifests/nodes.pp
-    sudo sed -i -E "s:(\s*truststore_password.*=>).*$:\1 \"wso2carbon\":g" /etc/puppet/manifests/nodes.pp
+    sudo sed -i -E "s:(\s*[$]local_package_dir.*=).*$:\1 \"/home/vagrant/packs\":g" /etc/puppet/manifests/nodes.pp
+    sudo sed -i -E "s:(\s*[$]mb_ip.*=).*$:\1 \"$IP_ADDR\":g" /etc/puppet/manifests/nodes.pp
+    sudo sed -i -E "s:(\s*[$]mb_port.*=).*$:\1 \"5672\":g" /etc/puppet/manifests/nodes.pp
+    sudo sed -i -E "s:(\s*[$]cep_ip.*=).*$:\1 \"$IP_ADDR\":g" /etc/puppet/manifests/nodes.pp
+    sudo sed -i -E "s:(\s*[$]cep_port.*=).*$:\1 \"7611\":g" /etc/puppet/manifests/nodes.pp
+    sudo sed -i -E "s:(\s*[$]truststore_password.*=).*$:\1 \"wso2carbon\":g" /etc/puppet/manifests/nodes.pp
 
-    sudo wget -q -P /etc/puppet/modules/java/files \
+    sudo wget -q -c -P /etc/puppet/modules/java/files \
               --no-cookies --no-check-certificate \
               --header "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie" \
               "http://download.oracle.com/otn-pub/java/jdk/7u51-b13/jdk-7u51-linux-x64.tar.gz"
 
-    sudo sed -i -E 's/(\$java_home.*=).*$/\1 "jdk1.7.0_51"/g' /etc/puppet/manifests/classes/java.pp
-    sudo sed -i -E 's/(\$package.*=).*$/\1 "jdk-7u51-linux-x64.tar.gz"/g' /etc/puppet/manifests/classes/java.pp
+    sudo sed -i -E 's:(\s*[$]java_name.*=).*$:\1 "jdk1.7.0_51":g' /etc/puppet/manifests/nodes.pp
+    sudo sed -i -E 's:(\s*[$]java_distribution.*=).*$:\1 "jdk-7u51-linux-x64.tar.gz":g' /etc/puppet/manifests/nodes.pp
 
   fi
   popd 
