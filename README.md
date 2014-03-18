@@ -31,7 +31,7 @@ Tested with:
  - ```vagrant reload cloudstack && ACTION='run-cloudstack' vagrant provision cloudstack``` # this runs cloudstack
  - ```vagrant halt cloudstack``` # stop the cloudstack box when finished using it
 
-Now open a browser from your host to 'http://192.168.56.10:8080/client' and login with 'admin/password'. After logging in, check "Infrastructure > System VMs".  When the VM State shows "Running" and Agent State shows "Up" for both VMs, you should be able to create an instance (don't add a disk offering to the image - this isn't working yet).
+Now open a browser from your host to 'http://192.168.56.10:8080/client' and login with 'admin/password'. After logging in, check "Infrastructure > System VMs".  When the VM State shows "Running" and Agent State shows "Up" for both VMs, you should be able to create an instance.
 
 - Start and Provision **Stratos** box:
 
@@ -39,8 +39,10 @@ Now open a browser from your host to 'http://192.168.56.10:8080/client' and logi
  - ```vagrant ssh stratos``` # log in to the stratos box
  - ```./stratos_dev.sh -i``` # this sets up stratos as per [Stratos Wiki]( https://cwiki.apache.org/confluence/display/STRATOS/4.0.0+Installation+Guide)
 
+### Todo
+
+- Create a packer build with appropriate size XEN kernel
 
 ### Issues
 
 - Proxy setup has not been tested or documented
-- Cloudstack image storage does not work
