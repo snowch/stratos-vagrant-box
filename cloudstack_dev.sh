@@ -169,7 +169,6 @@ function clean_cloudstack_db () {
    mvn -P developer -pl developer,tools/devcloud -Ddeploydb
    # change host from 192.168.56.1 to .10 for running cloudstack on devcloud
    sudo mysql -e "update configuration set value = '192.168.56.10' where name = 'host';" cloud
-   sudo mysql -e "update disk_offering set use_local_storage = 1 where type = 'Disk';" cloud
    popd
 }
 
@@ -206,6 +205,8 @@ function provision_cloudstack () {
       wget -P $progdir https://github.com/imduffy15/devcloud/raw/v0.2/devcloud.cfg
    fi
    python /home/vagrant/cloudstack/tools/marvin/marvin/deployDataCenter.py -i $progdir/devcloud.cfg
+   # devloud needs disks to use local storage
+   sudo mysql -e "update disk_offering set use_local_storage = 1 where type = 'Disk';" cloud
    popd
 }
 
