@@ -41,7 +41,7 @@ Now open a browser from your host to 'http://192.168.56.10:8080/client' and logi
 
 ### Todo
 
-- Create a packer build with appropriate size XEN kernel
+- Create a packer build with appropriate size XEN kernel or move to a non-Xen cloudstack environment such as [simstack](https://github.com/runseb/simstack)
 
 ### Issues
 
