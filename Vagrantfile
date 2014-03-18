@@ -23,6 +23,7 @@ require 'net/scp'
 CLOUDSTACK_IP="192.168.56.10"
 STRATOS_IP="192.168.56.5"
 
+
 Vagrant.configure("2") do |config|
 
   # 
@@ -58,11 +59,21 @@ Vagrant.configure("2") do |config|
     # virtualbox tools don't work on the xen kernel, so vagrant shared folders do not work
     # this is a hack to get the cloudstack setup script onto guest without shared folders
     if ARGV[0] == "provision"
-      Net::SCP.start(CLOUDSTACK_IP, "vagrant", :password => "vagrant") do |scp|
-        scp.upload! "cloudstack_dev.sh", "cloudstack_dev.sh"
+      begin
+        Net::SCP.start(CLOUDSTACK_IP, "vagrant", :password => "vagrant") do |scp|
+          scp.upload! "cloudstack_dev.sh", "cloudstack_dev.sh"
+        end
+        cloudstack.vm.provision "shell", inline: "chmod +x /home/vagrant/cloudstack_dev.sh"
+        if ENV['ACTION'] == 'setup-cloudstack'
+          cloudstack.vm.provision "shell", inline: ". /home/vagrant/cloudstack_dev.sh -i", privileged: false
+        elsif ENV['ACTION'] == 'run-cloudstack'
+          cloudstack.vm.provision "shell", inline: ". /home/vagrant/cloudstack_dev.sh -r", privileged: false
+        else
+          abort "Unknown ACTION '#{ENV['ACTION']}'. Try 'setup-cloudstack' or 'run-cloudstack'"
+        end
+      rescue
+        # box may not be running - ignore this error
       end
-      cloudstack.vm.provision "shell", inline: "chmod +x /home/vagrant/cloudstack_dev.sh"
-      cloudstack.vm.provision "shell", inline: ". /home/vagrant/cloudstack_dev.sh -i", privileged: false
     end
 
   end
