@@ -19,7 +19,7 @@
 set -e
 
 
-STRATOS_VERSION="4.0.0-incubating-m7"
+STRATOS_VERSION="master"
 STRATOS_PACK_PATH="/home/vagrant/stratos-packs"
 STRATOS_SETUP_PATH="/home/vagrant/stratos-installer"
 STRATOS_SOURCE_PATH="/home/vagrant/incubator-stratos"
@@ -34,7 +34,6 @@ progdir=$(dirname $progname)
 progdir=$(cd $progdir && pwd -P || echo $progdir)
 progarg=''
 
-export MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=500m -Xdebug -Xrunjdwp:transport=dt_socket,address=8888,server=y,suspend=n"
 
 function finish {
    echo "\n\nReceived SIGINT. Exiting..."
@@ -93,6 +92,8 @@ function prerequisites() {
   sudo apt-get update
   sudo apt-get install -y --no-install-recommends git maven openjdk-7-jdk
 
+  grep '^export MAVEN_OPTS' .profile || echo 'export MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=500m -Xdebug -Xrunjdwp:transport=dt_socket,address=8888,server=y,suspend=n"' >> .profile
+  . .profile
 }
 
 function puppet_setup() {
@@ -106,8 +107,31 @@ function puppet_setup() {
     cd puppetinstall
     echo '' | sudo ./puppetinstall -m -d stratos.com
 
-    sudo cp -R $STRATOS_SOURCE_PATH/tools/puppet/manifests/* /etc/puppet/manifests/
-    sudo cp -R $STRATOS_SOURCE_PATH/tools/puppet/modules/* /etc/puppet/modules/
+    [ -d /etc/puppet/modules/agent/files ] || sudo mkdir -p /etc/puppet/modules/agent/files
+
+    sudo cp -R $STRATOS_SOURCE_PATH/tools/puppet3/manifests/* /etc/puppet/manifests/
+    sudo cp -R $STRATOS_SOURCE_PATH/tools/puppet3/modules/* /etc/puppet/modules/
+    sudo cp -R $STRATOS_SOURCE_PATH/products/cartridge-agent/modules/distribution/target/apache-stratos-cartridge-agent-*-bin.zip /etc/puppet/modules/agent/files
+    sudo cp -R $STRATOS_SOURCE_PATH/products/load-balancer/modules/distribution/target/apache-stratos-load-balancer-*.zip /etc/puppet/modules/agent/files
+
+    sudo sh -c 'echo "*.stratos.com" > /etc/puppet/autosign.conf'
+
+    # TODO move hardcoded strings to variables
+    sudo sed -i -E 's:(\s*\$local_package_dir.*=).*$:\1 "/home/vagrant/packs":g' /etc/puppet/manifests/nodes.pp
+    sudo sed -i -E "s:(\s*mb_ip.*=>).*$:\1 \"$IP_ADDR\":g" /etc/puppet/manifests/nodes.pp
+    sudo sed -i -E "s:(\s*mb_port.*=>).*$:\1 \"5672\":g" /etc/puppet/manifests/nodes.pp
+    sudo sed -i -E "s:(\s*cep_ip.*=>).*$:\1 \"$IP_ADDR\":g" /etc/puppet/manifests/nodes.pp
+    sudo sed -i -E "s:(\s*cep_port.*=>).*$:\1 \"7611\":g" /etc/puppet/manifests/nodes.pp
+    sudo sed -i -E "s:(\s*truststore_password.*=>).*$:\1 \"wso2carbon\":g" /etc/puppet/manifests/nodes.pp
+
+    sudo wget -q -P /etc/puppet/modules/java/files \
+              --no-cookies --no-check-certificate \
+              --header "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie" \
+              "http://download.oracle.com/otn-pub/java/jdk/7u51-b13/jdk-7u51-linux-x64.tar.gz"
+
+    sudo sed -i -E 's/(\$java_home.*=).*$/\1 "jdk1.7.0_51"/g' /etc/puppet/manifests/classes/java.pp
+    sudo sed -i -E 's/(\$package.*=).*$/\1 "jdk-7u51-linux-x64.tar.gz"/g' /etc/puppet/manifests/classes/java.pp
+
   fi
   popd 
 
@@ -167,7 +191,7 @@ function maven_clean_install () {
    
    pushd $PWD
    cd /home/vagrant/incubator-stratos
-   mvn clean install
+   mvn clean install -DskipTests
    popd
 }
 
@@ -195,8 +219,8 @@ function initial_setup() {
    downloads   
    prerequisites
    checkout
-   puppet_setup # has a dependency on stratos checkout
    maven_clean_install
+   puppet_setup # has a dependency on maven_clean_install
 }
 
 main "$@"
