@@ -96,6 +96,10 @@ Vagrant.configure("2") do |config|
 
     # make the stratos setup script available in the /home/vagrant folder
     stratos.vm.provision "shell", inline: "ln -sf /vagrant/stratos_dev.sh /home/vagrant/stratos_dev.sh", privileged: false
+
+    stratos.vm.provider "virtualbox" do |v|
+      v.customize ["modifyvm", :id, "--memory", 4096]
+    end
   end
 
 end
