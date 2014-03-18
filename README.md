@@ -27,6 +27,9 @@ Now open a browser from your host to 'http://192.168.56.10:8080/client' and logi
  - ```vagrant ssh stratos``` # log in to the stratos box
  - ```./stratos_dev.sh -i``` # this sets up stratos as per [Stratos Wiki]( https://cwiki.apache.org/confluence/display/STRATOS/4.0.0+Installation+Guide)
 
+### Todo
+
+- Create a packer build with appropriate size XEN kernel
 
 ### Issues
 
