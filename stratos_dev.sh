@@ -239,6 +239,7 @@ function initial_setup() {
    maven_clean_install
    puppet_setup # has a dependency on maven_clean_install
    cartridge_setup
+   installer
 }
 
 main "$@"
