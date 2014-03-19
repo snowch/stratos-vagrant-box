@@ -50,11 +50,12 @@ function finish {
 trap finish SIGINT
 
 function main() {
-  while getopts 'ihn' flag; do
+  while getopts 'ihnr' flag; do
     progarg=${flag}
     case "${flag}" in
       i) initial_setup ; exit $? ;;
       n) installer; exit $? ;;
+      r) run_stratos; exit $? ;;
       h) usage ; exit $? ;;
       \?) usage ; exit $? ;;
       *) usage ; exit $? ;;
@@ -65,10 +66,11 @@ function main() {
 
 function usage () {
    cat <<EOF
-Usage: $progname -[i|n|h]
+Usage: $progname -[i|n|r|h]
 where:
     -i checkout and build
-    -n run stratos installer
+    -n stratos installer
+    -r run stratos 
     -h help
 EOF
    exit 0
@@ -168,6 +170,9 @@ function installer() {
 
   echo -e "\e[32mRunning Stratos Installer\e[39m"
 
+  # tmux is useful for starting all the services in different windows
+  sudo apt-get install -y tmux
+
   pushd $PWD
   cp -rpf $STRATOS_SOURCE_PATH/tools/stratos-installer $STRATOS_SETUP_PATH
   cp -f $STRATOS_SOURCE_PATH/products/stratos-manager/modules/distribution/target/apache-stratos-manager-*.zip $STRATOS_PACK_PATH/
@@ -189,7 +194,9 @@ function installer() {
   sed -i "s:^export puppet_ip=.*:export puppet_ip=$IP_ADDR:g" $STRATOS_SETUP_PATH/conf/setup.conf
   HOSTNAME=$(hostname --fqdn)
   sed -i "s:^export puppet_hostname=.*:export puppet_hostname=$HOSTNAME:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  # set to a dummy value
+  DOMAINNAME=$(hostname --domain)
+  sed -i "s:^export stratos_domain=.*:export stratos_domain=$DOMAINNAME:g" $STRATOS_SETUP_PATH/conf/setup.conf
+  # set puppet_environment to a dummy value
   sed -i "s:^export puppet_environment=.*:export puppet_environment=XXXXXXXXXXXXXXXXX:g" $STRATOS_SETUP_PATH/conf/setup.conf
   JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64/
   sed -i "s:^export JAVA_HOME=.*:export JAVA_HOME=$JAVA_HOME:g" $STRATOS_SETUP_PATH/conf/setup.conf
@@ -206,6 +213,30 @@ function installer() {
   
   [ -d $STRATOS_PATH ] || mkdir $STRATOS_PATH
   echo '' | sudo ./setup.sh -p all
+
+  popd
+}
+
+function run_stratos() {
+
+  pushd $PWD
+
+  grep '^export JAVA_HOME' ~/.profile || echo 'export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64' >> ~/.profile
+  . ~/.profile
+
+  tmux att -t stratos ||
+  tmux \
+    new -s stratos -n mb \; \
+    send-keys 'cd /home/vagrant/stratos/wso2mb-*; ./bin/wso2server.sh' C-m \; \
+    neww -n cep \; \
+    send-keys 'sleep 30; cd /home/vagrant/stratos/wso2cep-*; ./bin/wso2server.sh' C-m \; \
+    neww -n as \; \
+    send-keys 'sleep 60; cd /home/vagrant/stratos/apache-stratos-autoscaler-*; ./bin/stratos.sh' C-m \; \
+    neww -n cc \; \
+    send-keys 'sleep 90; cd /home/vagrant/stratos/apache-stratos-cc-*; ./bin/stratos.sh' C-m \; \
+    neww -n sm \; \
+    send-keys 'sleep 120; cd /home/vagrant/stratos/apache-stratos-manager-*; ./bin/stratos.sh' C-m \; \
+    selectw -t mb
 
   popd
 }
