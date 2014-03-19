@@ -83,6 +83,7 @@ where:
     -k kill stratos tmux session (kills applications runnings in tmux windows)
     -h show this help message
 
+The first option you run must be '-f, first setup'.
 All options can be re-run as often as required. 
 EOF
    exit 0
