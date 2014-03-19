@@ -32,9 +32,11 @@ MYSQLJ_URL="http://repo1.maven.org/maven2/mysql/mysql-connector-java/5.1.29"
 MYSQLJ_FILE="mysql-connector-java-5.1.29.jar"
 ANDES_CLIENT_JAR_URL="http://maven.wso2.org/nexus/content/groups/wso2-public/org/wso2/andes/wso2/andes-client/0.13.wso2v8/"
 ANDES_CLIENT_JAR_FILE="andes-client-0.13.wso2v8.jar"
-IP_ADDR="192.168.56.10"
+IP_ADDR="192.168.56.5"
 MB_PORT=5672
 CEP_PORT=7611
+
+JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64/
 
 progname=$0
 progdir=$(dirname $progname)
@@ -198,13 +200,10 @@ function installer() {
   sed -i "s:^export stratos_domain=.*:export stratos_domain=$DOMAINNAME:g" $STRATOS_SETUP_PATH/conf/setup.conf
   # set puppet_environment to a dummy value
   sed -i "s:^export puppet_environment=.*:export puppet_environment=XXXXXXXXXXXXXXXXX:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64/
   sed -i "s:^export JAVA_HOME=.*:export JAVA_HOME=$JAVA_HOME:g" $STRATOS_SETUP_PATH/conf/setup.conf
   sed -i "s:^export cep_artifacts_path=.*:export cep_artifacts_path=$STRATOS_SOURCE_PATH/extensions/cep/artifacts/:g" $STRATOS_SETUP_PATH/conf/setup.conf
   sed -i "s:^export mysql_connector_jar=.*:export mysql_connector_jar=$STRATOS_PACK_PATH/$MYSQLJ_FILE:g" $STRATOS_SETUP_PATH/conf/setup.conf
   sed -i "s:^export userstore_db_pass=.*:export userstore_db_pass=password:g" $STRATOS_SETUP_PATH/conf/setup.conf
-
-  # TODO finish CEP, CC, SM config
 
   cd $STRATOS_SETUP_PATH
   chmod +x *.sh
@@ -221,7 +220,7 @@ function run_stratos() {
 
   pushd $PWD
 
-  grep '^export JAVA_HOME' ~/.profile || echo 'export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64' >> ~/.profile
+  grep '^export JAVA_HOME' ~/.profile || echo "export JAVA_HOME=$JAVA_HOME" >> ~/.profile
   . ~/.profile
 
   tmux att -t stratos ||
