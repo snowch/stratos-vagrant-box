@@ -72,7 +72,7 @@ function main() {
 
 function usage () {
    cat <<EOF
-Usage: $progname -[f|c|b|n|r|k|h]
+Usage: $progname -[f|c|b|p|n|r|k|h]
 where:
     -f first setup (checkout, build, puppet setup, stratos installer, run stratos) 
     -c checkout stratos
