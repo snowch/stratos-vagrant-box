@@ -50,10 +50,11 @@ function finish {
 trap finish SIGINT
 
 function main() {
-  while getopts 'icrpdf' flag; do
+  while getopts 'ihn' flag; do
     progarg=${flag}
     case "${flag}" in
       i) initial_setup ; exit $? ;;
+      n) installer; exit $? ;;
       h) usage ; exit $? ;;
       \?) usage ; exit $? ;;
       *) usage ; exit $? ;;
@@ -64,9 +65,11 @@ function main() {
 
 function usage () {
    cat <<EOF
-Usage: $progname -[i|c|r|p|d|f]
+Usage: $progname -[i|n|h]
 where:
     -i checkout and build
+    -n run stratos installer
+    -h help
 EOF
    exit 0
 }
@@ -104,8 +107,12 @@ function prerequisites() {
   sudo apt-get update
   sudo apt-get install -y --no-install-recommends git maven openjdk-7-jdk 
 
-  # install mysql with default password of 'password'
-  sudo DEBIAN_FRONTEND=noninteractive apt-get -q -y install mysql-server
+  sudo sh -c "
+     export DEBIAN_FRONTEND=noninteractive
+     echo mysql-server-5.1 mysql-server/root_password password password | debconf-set-selections
+     echo mysql-server-5.1 mysql-server/root_password_again password password | debconf-set-selections
+     apt-get -y install mysql-server
+     "
 
   grep '^export MAVEN_OPTS' .profile || echo 'export MAVEN_OPTS="-Xmx2048m -XX:MaxPermSize=512m -XX:ReservedCodeCacheSize=256m -Xdebug -Xrunjdwp:transport=dt_socket,address=8888,server=y,suspend=n"' >> .profile
   . .profile
@@ -163,10 +170,10 @@ function installer() {
 
   pushd $PWD
   cp -rpf $STRATOS_SOURCE_PATH/tools/stratos-installer $STRATOS_SETUP_PATH
-  mv $STRATOS_SOURCE_PATH/products/stratos-manager/modules/distribution/target/apache-stratos-manager-*.zip $STRATOS_PACK_PATH/
-  mv $STRATOS_SOURCE_PATH/products/cloud-controller/modules/distribution/target/apache-stratos-cc-*.zip $STRATOS_PACK_PATH/
-  mv $STRATOS_SOURCE_PATH/products/autoscaler/modules/distribution/target/apache-stratos-autoscaler-*.zip $STRATOS_PACK_PATH/
-  mv $STRATOS_SOURCE_PATH/extensions/cep/stratos-cep-extension/target/org.apache.stratos.cep.extension-*.jar $STRATOS_PACK_PATH
+  cp -f $STRATOS_SOURCE_PATH/products/stratos-manager/modules/distribution/target/apache-stratos-manager-*.zip $STRATOS_PACK_PATH/
+  cp -f $STRATOS_SOURCE_PATH/products/cloud-controller/modules/distribution/target/apache-stratos-cc-*.zip $STRATOS_PACK_PATH/
+  cp -f $STRATOS_SOURCE_PATH/products/autoscaler/modules/distribution/target/apache-stratos-autoscaler-*.zip $STRATOS_PACK_PATH/
+  cp -f $STRATOS_SOURCE_PATH/extensions/cep/stratos-cep-extension/target/org.apache.stratos.cep.extension-*.jar $STRATOS_PACK_PATH
 
   sed -i "s:^export setup_path=.*:export setup_path=$STRATOS_SETUP_PATH:g" $STRATOS_SETUP_PATH/conf/setup.conf
   sed -i "s:^export stratos_pack_path=.*:export stratos_pack_path=$STRATOS_PACK_PATH:g" $STRATOS_SETUP_PATH/conf/setup.conf
