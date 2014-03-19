@@ -155,6 +155,9 @@ function cartridge_setup() {
 }
 
 function installer() {
+
+  echo -e "\e[32mRunning Stratos Installer\e[39m"
+
   pushd $PWD
   cp -rpf $STRATOS_SOURCE_PATH/tools/stratos-installer $STRATOS_SETUP_PATH
   mv $STRATOS_SOURCE_PATH/products/stratos-manager/modules/distribution/target/apache-stratos-manager-*.zip $STRATOS_PACK_PATH/
