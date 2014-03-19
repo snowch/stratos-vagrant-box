@@ -102,7 +102,10 @@ function prerequisites() {
 
   echo -e "\e[32mInstall prerequisite software\e[39m"
   sudo apt-get update
-  sudo apt-get install -y --no-install-recommends git maven openjdk-7-jdk
+  sudo apt-get install -y --no-install-recommends git maven openjdk-7-jdk 
+
+  # install mysql with default password of 'password'
+  sudo DEBIAN_FRONTEND=noninteractive apt-get -q -y install mysql-server
 
   grep '^export MAVEN_OPTS' .profile || echo 'export MAVEN_OPTS="-Xmx2048m -XX:MaxPermSize=512m -XX:ReservedCodeCacheSize=256m -Xdebug -Xrunjdwp:transport=dt_socket,address=8888,server=y,suspend=n"' >> .profile
   . .profile
@@ -177,9 +180,24 @@ function installer() {
   sed -i "s:^export sm_ip=.*:export sm_ip=$IP_ADDR:g" $STRATOS_SETUP_PATH/conf/setup.conf
   sed -i "s:^export sm_ip=.*:export sm_ip=$IP_ADDR:g" $STRATOS_SETUP_PATH/conf/setup.conf
   sed -i "s:^export puppet_ip=.*:export puppet_ip=$IP_ADDR:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export puppet_hostname=.*:export puppet_hostname=devcloud:g" $STRATOS_SETUP_PATH/conf/setup.conf
+  HOSTNAME=$(hostname --fqdn)
+  sed -i "s:^export puppet_hostname=.*:export puppet_hostname=$HOSTNAME:g" $STRATOS_SETUP_PATH/conf/setup.conf
+  # set to a dummy value
   sed -i "s:^export puppet_environment=.*:export puppet_environment=XXXXXXXXXXXXXXXXX:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  # TODO finish this section
+  JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64/
+  sed -i "s:^export JAVA_HOME=.*:export JAVA_HOME=$JAVA_HOME:g" $STRATOS_SETUP_PATH/conf/setup.conf
+  sed -i "s:^export cep_artifacts_path=.*:export cep_artifacts_path=$STRATOS_SOURCE_PATH/extensions/cep/artifacts/:g" $STRATOS_SETUP_PATH/conf/setup.conf
+  sed -i "s:^export mysql_connector_jar=.*:export mysql_connector_jar=$STRATOS_PACK_PATH/$MYSQLJ_FILE:g" $STRATOS_SETUP_PATH/conf/setup.conf
+
+  # TODO finish CEP, CC, SM config
+
+  cd $STRATOS_SETUP_PATH
+  chmod +x *.sh
+
+  echo 'y' | sudo ./clean.sh -u root -p password
+  
+  [ -d $STRATOS_PATH ] || mkdir $STRATOS_PATH
+  echo '' | sudo ./setup.sh -p all
 
   popd
 }
