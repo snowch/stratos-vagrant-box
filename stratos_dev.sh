@@ -52,12 +52,13 @@ function finish {
 trap finish SIGINT
 
 function main() {
-  while getopts 'ihnr' flag; do
+  while getopts 'ihnrk' flag; do
     progarg=${flag}
     case "${flag}" in
       i) initial_setup ; exit $? ;;
       n) installer; exit $? ;;
       r) run_stratos; exit $? ;;
+      k) kill_stratos; exit $? ;;
       h) usage ; exit $? ;;
       \?) usage ; exit $? ;;
       *) usage ; exit $? ;;
@@ -70,10 +71,11 @@ function usage () {
    cat <<EOF
 Usage: $progname -[i|n|r|h]
 where:
-    -i checkout and build
-    -n stratos installer
-    -r run stratos 
-    -h help
+    -i checkout and build stratos
+    -n strart stratos installer
+    -r run stratos in tmux (use CTRL+B then window number to switch tmux windows)
+    -k kill stratos tmux session (kills applications runnings in tmux windows)
+    -h show this help message
 EOF
    exit 0
 }
@@ -235,9 +237,18 @@ function run_stratos() {
     send-keys 'sleep 90; cd /home/vagrant/stratos/apache-stratos-cc-*; ./bin/stratos.sh' C-m \; \
     neww -n sm \; \
     send-keys 'sleep 120; cd /home/vagrant/stratos/apache-stratos-manager-*; ./bin/stratos.sh' C-m \; \
-    selectw -t mb
+    neww -n bash \; \
+    send-keys 'cd /home/vagrant; ./stratos_dev.sh -h' C-m \; \
+    selectw -t bash 
 
   popd
+}
+
+function kill_stratos() {
+   
+   echo -e "\e[32mKill tmux and processes running in tmux windows?\e[39m"
+   read -p "[Enter] key to continue, [CTRL+C] to cancel."
+   tmux kill-session >/dev/null 2>&1 
 }
 
 function checkout() {
