@@ -37,7 +37,7 @@ When cloudstack is running, open a browser from your host to 'http://192.168.56.
 
  - ```vagrant up stratos``` # starts the stratos box
  - ```vagrant ssh stratos``` # log in to the stratos box
- - ```./stratos_dev.sh -i``` # this sets up stratos as per [Stratos Wiki]( https://cwiki.apache.org/confluence/display/STRATOS/4.0.0+Installation+Guide)
+ - ```./stratos_dev.sh -h``` # show the stratos setup instructions
 
 ### Todo
 
