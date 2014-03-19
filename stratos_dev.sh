@@ -188,6 +188,7 @@ function installer() {
   sed -i "s:^export JAVA_HOME=.*:export JAVA_HOME=$JAVA_HOME:g" $STRATOS_SETUP_PATH/conf/setup.conf
   sed -i "s:^export cep_artifacts_path=.*:export cep_artifacts_path=$STRATOS_SOURCE_PATH/extensions/cep/artifacts/:g" $STRATOS_SETUP_PATH/conf/setup.conf
   sed -i "s:^export mysql_connector_jar=.*:export mysql_connector_jar=$STRATOS_PACK_PATH/$MYSQLJ_FILE:g" $STRATOS_SETUP_PATH/conf/setup.conf
+  sed -i "s:^export userstore_db_pass=.*:export userstore_db_pass=password:g" $STRATOS_SETUP_PATH/conf/setup.conf
 
   # TODO finish CEP, CC, SM config
 
