@@ -74,7 +74,7 @@ function usage () {
    cat <<EOF
 Usage: $progname -[f|c|b|p|n|r|k|h]
 where:
-    -f first setup (checkout, build, puppet setup, stratos installer, run stratos) 
+    -f first setup (checkout, build, puppet setup, stratos installer) 
     -c checkout stratos
     -b build stratos
     -p puppet setup
@@ -233,6 +233,8 @@ function run_stratos() {
 
   pushd $PWD
 
+  cd /home/vagrant
+
   grep '^export JAVA_HOME' ~/.profile || echo "export JAVA_HOME=$JAVA_HOME" >> ~/.profile
   . ~/.profile
 
@@ -321,7 +323,6 @@ function initial_setup() {
    puppet_setup # has a dependency on maven_clean_install
    cartridge_setup
    installer
-   run_stratos
 }
 
 main "$@"
