@@ -35,6 +35,8 @@ When cloudstack is running, open a browser from your host to 'http://192.168.56.
 
 - Start and Provision **Stratos** box:
 
+ - Edit the iaas.conf to point to your IaaS
+
  - ```vagrant up stratos``` # starts the stratos box
  - ```vagrant ssh stratos``` # log in to the stratos box
  - ```./stratos_dev.sh -h``` # show the stratos setup instructions

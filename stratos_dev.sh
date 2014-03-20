@@ -18,7 +18,7 @@
 
 set -e
 
-
+# You should not need to change these variables
 STRATOS_VERSION="master"
 STRATOS_PACK_PATH="/home/vagrant/stratos-packs"
 STRATOS_SETUP_PATH="/home/vagrant/stratos-installer"
@@ -217,6 +217,18 @@ function installer() {
   sed -i "s:^export cep_artifacts_path=.*:export cep_artifacts_path=$STRATOS_SOURCE_PATH/extensions/cep/artifacts/:g" $STRATOS_SETUP_PATH/conf/setup.conf
   sed -i "s:^export mysql_connector_jar=.*:export mysql_connector_jar=$STRATOS_PACK_PATH/$MYSQLJ_FILE:g" $STRATOS_SETUP_PATH/conf/setup.conf
   sed -i "s:^export userstore_db_pass=.*:export userstore_db_pass=password:g" $STRATOS_SETUP_PATH/conf/setup.conf
+
+  # pick up the users IaaS settings
+  source /home/vagrant/iaas.conf
+
+  #EC2
+  sed -i "s:^export ec2_provider_enabled=.*:export ec2_provider_enabled='$ec2_provider_enabled':g" $STRATOS_SETUP_PATH/conf/setup.conf
+  sed -i "s:^export ec2_identity=.*:export ec2_identity='$ec2_identity':g" $STRATOS_SETUP_PATH/conf/setup.conf
+  sed -i "s:^export ec2_credential=.*:export ec2_credential='$ec2_credential':g" $STRATOS_SETUP_PATH/conf/setup.conf
+  sed -i "s:^export ec2_keypair_name=.*:export ec2_keypair_name='$ec2_keypair_name':g" $STRATOS_SETUP_PATH/conf/setup.conf
+  sed -i "s:^export ec2_owner_id=.*:export ec2_owner_id='$ec2_owner_id':g" $STRATOS_SETUP_PATH/conf/setup.conf
+  sed -i "s:^export ec2_availability_zone=.*:export ec2_availability_zone='$ec2_availability_zone':g" $STRATOS_SETUP_PATH/conf/setup.conf
+  sed -i "s:^export ec2_security_groups=.*:export ec2_security_groups='$ec2_security_groups':g" $STRATOS_SETUP_PATH/conf/setup.conf
 
   cd $STRATOS_SETUP_PATH
   chmod +x *.sh
