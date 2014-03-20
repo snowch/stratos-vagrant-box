@@ -53,6 +53,7 @@ When cloudstack is running, open a browser from your host to 'http://192.168.56.
 
 ### Todo
 
+- The final step of connecting Stratos to an IaaS has yet to be done!
 - Create a packer build with appropriate size XEN kernel or move to a non-Xen cloudstack environment such as [simstack](https://github.com/runseb/simstack)
 
 ### Issues
