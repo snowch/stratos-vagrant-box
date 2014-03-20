@@ -1,13 +1,15 @@
-Stratos + Cloudstack Environment
-================================
+Stratos Runtime Environment
+===========================
 
 ### Overview
 
-This project contains scripts to provision cloudstack and stratos runtimes.
+This project contains scripts to automate the setup of the Ubuntu 12.04 to support Stratos, and and automate the setup of the Stratos runtime.  This environment also provides a local Cloudstack vagrant environment for those users who want minimal configuration to try out Stratos.
 
 **WARNING:** This environment is a work-in-progress.  When it is ready for public use, a github release will be created.
 
 ### Pre-requisites
+
+This environment uses Vagrant and Virtualbox.
 
 Tested with:
 
@@ -17,6 +19,20 @@ Tested with:
 ### Usage
 
 - Clone this project: ```git clone git@github.com:snowch/devcloud-script.git  & cd devcloud-script```
+- If you want to use setup a local cloudstack environment for running stratos, see the section "Cloudstack Runtime", below.
+- Configure and start the "Stratos Runtime", see below.
+
+#### Stratos Runtime ####
+
+- Start and Provision **Stratos** box:
+
+ - Edit the iaas.conf to point to your IaaS
+ - ```vagrant up stratos``` # starts the stratos box
+ - ```vagrant ssh stratos``` # log in to the stratos box
+ - ```./stratos_dev.sh -h``` # show the stratos setup instructions
+
+
+#### Cloudstack Runtime ####
 
 - Setup **Cloudstack** box:
 
@@ -32,13 +48,6 @@ Tested with:
  - ```vagrant halt cloudstack``` # stop the cloudstack box when finished using it
 
 When cloudstack is running, open a browser from your host to 'http://192.168.56.10:8080/client' and login with 'admin/password'. After logging in, check "Infrastructure > System VMs".  When the VM State shows "Running" and Agent State shows "Up" for both VMs, you should be able to create an instance.  If you don't see a template when creating an instance, wait a few minutes because cloudstack is probably still setting it self up in the background.
-
-- Start and Provision **Stratos** box:
-
- - Edit the iaas.conf to point to your IaaS
- - ```vagrant up stratos``` # starts the stratos box
- - ```vagrant ssh stratos``` # log in to the stratos box
- - ```./stratos_dev.sh -h``` # show the stratos setup instructions
 
 ### Todo
 
