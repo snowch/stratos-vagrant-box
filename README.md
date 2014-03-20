@@ -11,7 +11,7 @@ This environment also provides a local Cloudstack vagrant environment for those 
 
 ### Pre-requisites
 
-This environment uses Vagrant and Virtualbox.
+This environment uses Vagrant [(download)](http://www.vagrantup.com/downloads.html) and Virtualbox [(download)](https://www.virtualbox.org/wiki/Downloads).
 
 Tested with:
 
