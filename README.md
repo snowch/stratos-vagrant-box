@@ -3,7 +3,9 @@ Stratos Runtime Environment
 
 ### Overview
 
-This project contains scripts to automate the setup of the Ubuntu 12.04 to support Stratos, and and automate the setup of the Stratos runtime.  This environment also provides a local Cloudstack vagrant environment for those users who want minimal configuration to try out Stratos.
+This project contains scripts to automate the setup of Ubuntu 12.04 to support Stratos, and to also automate the setup of the Stratos runtime.  
+
+This environment also provides a local Cloudstack vagrant environment for those users who want minimal configuration of an IaaS to try out Stratos.
 
 **WARNING:** This environment is a work-in-progress.  When it is ready for public use, a github release will be created.
 
