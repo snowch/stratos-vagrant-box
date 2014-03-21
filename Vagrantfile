@@ -27,6 +27,32 @@ STRATOS_IP="192.168.56.5"
 Vagrant.configure("2") do |config|
 
   # 
+  # Define a box for setting up Stratos
+  #
+  config.vm.define "stratos" do |stratos|
+
+    # use the opscode vagrant box definitions because they have a 40Gb disk which should be enough for
+    # stratos. ubuntu cloud images only have 10Gb which is not enough.
+    stratos.vm.box = "opscode-ubuntu-12.04"
+    stratos.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-12.04_chef-provisionerless.box"
+    
+    # 
+    stratos.vm.hostname = "paas.stratos.org"
+    
+    # put stratos on the same private network as cloudstack so they can talk to each other
+    stratos.vm.network :private_network, :ip => STRATOS_IP
+
+    # make the stratos setup script available in the /home/vagrant folder
+    stratos.vm.provision "shell", inline: "ln -sf /vagrant/stratos_dev.sh /home/vagrant/stratos_dev.sh", privileged: false
+    stratos.vm.provision "shell", inline: "ln -sf /vagrant/iaas.conf /home/vagrant/iaas.conf", privileged: false
+
+    stratos.vm.provider "virtualbox" do |v|
+      v.customize ["modifyvm", :id, "--memory", 4096]
+    end
+  end
+
+
+  # 
   # Define a box for running cloudstack
   #
   config.vm.define "cloudstack" do |cloudstack|
@@ -61,7 +87,7 @@ Vagrant.configure("2") do |config|
     if ARGV[0] == "provision"
       begin
         Net::SCP.start(CLOUDSTACK_IP, "vagrant", :password => "vagrant") do |scp|
-          scp.upload! "cloudstack_dev.sh", "cloudstack_dev.sh"
+          scp.upload! "iaas_scripts/cloudstack/cloudstack_dev.sh", "cloudstack_dev.sh"
         end
         cloudstack.vm.provision "shell", inline: "chmod +x /home/vagrant/cloudstack_dev.sh"
         if ENV['ACTION'] == 'setup-cloudstack'
@@ -69,7 +95,10 @@ Vagrant.configure("2") do |config|
         elsif ENV['ACTION'] == 'run-cloudstack'
           cloudstack.vm.provision "shell", inline: ". /home/vagrant/cloudstack_dev.sh -r", privileged: false
         else
-          abort "Unknown ACTION '#{ENV['ACTION']}'. Try 'setup-cloudstack' or 'run-cloudstack'"
+          msg = "ERROR: Unknown or missing ACTION '#{ENV['ACTION']}'.\n\n"\
+                "Try using an ACTION of 'setup-cloudstack' or 'run-cloudstack', E.g.\n"\
+                "ACTION='run-cloudstack' vagrant provision cloudstack\n"
+          abort msg
         end
       rescue
         # box may not be running - ignore this error
@@ -78,29 +107,5 @@ Vagrant.configure("2") do |config|
 
   end
 
-  # 
-  # create a box for setting up Stratos
-  #
-  config.vm.define "stratos" do |stratos|
-
-    # use the opscode vagrant box definitions because they have a 40Gb disk which should be enough for
-    # stratos. ubuntu cloud images only have 10Gb which is not enough.
-    stratos.vm.box = "opscode-ubuntu-12.04"
-    stratos.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-12.04_chef-provisionerless.box"
-    
-    # 
-    stratos.vm.hostname = "paas.stratos.org"
-    
-    # put stratos on the same private network as cloudstack so they can talk to each other
-    stratos.vm.network :private_network, :ip => STRATOS_IP
-
-    # make the stratos setup script available in the /home/vagrant folder
-    stratos.vm.provision "shell", inline: "ln -sf /vagrant/stratos_dev.sh /home/vagrant/stratos_dev.sh", privileged: false
-    stratos.vm.provision "shell", inline: "ln -sf /vagrant/iaas.conf /home/vagrant/iaas.conf", privileged: false
-
-    stratos.vm.provider "virtualbox" do |v|
-      v.customize ["modifyvm", :id, "--memory", 4096]
-    end
-  end
 
 end
