@@ -52,7 +52,7 @@ function finish {
 trap finish SIGINT
 
 function main() {
-  while getopts 'fcbpnrkh' flag; do
+  while getopts 'fcbpnrkdh' flag; do
     progarg=${flag}
     case "${flag}" in
       f) initial_setup ; exit $? ;;
@@ -62,6 +62,7 @@ function main() {
       n) installer; exit $? ;;
       r) run_stratos; exit $? ;;
       k) kill_stratos; exit $? ;;
+      d) development_environment; exit $? ;;
       h) usage ; exit $? ;;
       \?) usage ; exit $? ;;
       *) usage ; exit $? ;;
@@ -72,7 +73,7 @@ function main() {
 
 function usage () {
    cat <<EOF
-Usage: $progname -[f|c|b|p|n|r|k|h]
+Usage: $progname -[f|c|b|p|n|r|k|d|h]
 where:
     -f first setup (checkout, build, puppet setup, stratos installer) 
     -c checkout stratos
@@ -81,6 +82,7 @@ where:
     -n start stratos installer
     -r run stratos in tmux (use CTRL+B then window number to switch tmux windows)
     -k kill stratos tmux session (kills applications runnings in tmux windows)
+    -d setup a development environment (installs lubuntu desktop and eclipse)
     -h show this help message
 
 The first option you run must be '-f, first setup'.
@@ -274,6 +276,65 @@ function kill_stratos() {
    echo -e "\e[32mKill tmux and processes running in tmux windows?\e[39m"
    read -p "[Enter] key to continue, [CTRL+C] to cancel."
    tmux kill-session >/dev/null 2>&1 
+}
+
+function development_environment() {
+
+   echo -e "\e[32mSetting up development environment.\e[39m"
+
+   pushd $PWD
+   sudo apt-get install -y --no-install-recommends lubuntu-desktop eclipse-jdt xvfb lxde
+   sudo apt-get install -y --no-install-recommends vnc4server xrdp
+
+   echo lxsession > ~/.xsession
+
+   cd $STRATOS_SOURCE_PATH
+   mvn eclipse:eclipse
+
+   # import projects
+   sudo wget -c -P /usr/share/eclipse/dropins/ \
+      https://github.com/snowch/test.myapp/raw/master/test.myapp_1.0.0.jar
+
+   # get all the directories that can be imported into eclipse and append them
+   # with '-import'
+
+   if [ -e /home/vagrant/workspace ]
+   then
+      IMPORTS='' # importing fails if workspace already has imported projects 
+   else
+      IMPORTS=$(find $STRATOS_SOURCE_PATH -type f -name .project)
+   fi
+
+   IMPORT_ERRORS=""
+
+   # Although it is possible to import multiple directories with one 
+   # invocation of the test.myapp.App, this fails if one of the imports
+   # was not successful.  Using a for loop is slower, but more robust
+   set +e
+   for item in ${IMPORTS[*]};
+   do
+      IMPORT="$(dirname $item)/"
+
+      # perform the import 
+      eclipse -nosplash \
+         -application test.myapp.App \
+         -data /home/vagrant/workspace \
+         -import $IMPORT
+      if [ $? != 0 ]
+      then
+        IMPORT_ERRORS="${IMPORT_ERRORS}\n${IMPORT}"
+      fi
+   done
+   set -e
+
+   if [ -z "$IMPORT_ERRORS" ]
+   then
+      echo -e "\e[31mImport Errors:\n\n\e[39m"
+      echo -e "\e[31m$IMPORT_ERRORS\e[39m"
+   fi
+
+   mvn -Declipse.workspace=/home/vagrant/workspace/ eclipse:configure-workspace
+   popd
 }
 
 function checkout() {
