@@ -20,7 +20,7 @@ Tested with:
 
 ### Usage
 
-- Clone this project: ```git clone git@github.com:snowch/devcloud-script.git  & cd devcloud-script```
+- Clone this project: ```git clone git@github.com:snowch/devcloud-script.git && cd devcloud-script```
 - If you want to use setup a local cloudstack environment for running stratos, see the section "Cloudstack Runtime", below.
 - Configure and start the "Stratos Runtime", see below.
 
