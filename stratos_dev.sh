@@ -26,12 +26,12 @@ STRATOS_SOURCE_PATH="/home/vagrant/incubator-stratos"
 STRATOS_PATH="/home/vagrant/stratos"
 WSO2_CEP_URL="http://people.apache.org/~chsnow"
 WSO2_CEP_FILE="wso2cep-3.0.0.zip"
-WSO2_MB_URL="http://people.apache.org/~chsnow"
-WSO2_MB_FILE="wso2mb-2.1.0.zip"
+ACTIVEMQ_URL="http://www.mirrorservice.org/sites/ftp.apache.org/activemq/apache-activemq/5.8.0"
+ACTIVEMQ_FILE="apache-activemq-5.8.0-bin.tar.gz"
 MYSQLJ_URL="http://repo1.maven.org/maven2/mysql/mysql-connector-java/5.1.29"
 MYSQLJ_FILE="mysql-connector-java-5.1.29.jar"
-ANDES_CLIENT_JAR_URL="http://maven.wso2.org/nexus/content/groups/wso2-public/org/wso2/andes/wso2/andes-client/0.13.wso2v8/"
-ANDES_CLIENT_JAR_FILE="andes-client-0.13.wso2v8.jar"
+HAWTBUF_URL="http://repo1.maven.org/maven2/org/fusesource/hawtbuf/hawtbuf/1.2"
+HAWTBUF_FILE="hawtbuf-1.2.jar"
 IP_ADDR="192.168.56.5"
 MB_PORT=5672
 CEP_PORT=7611
@@ -106,11 +106,6 @@ function downloads () {
   if [ ! -e $STRATOS_PACK_PATH/$WSO2_CEP_FILE ]
   then
      wget -q -P $STRATOS_PACK_PATH $WSO2_CEP_URL/$WSO2_CEP_FILE
-  fi
-  
-  if [ ! -e $STRATOS_PACK_PATH/$WSO2_MB_FILE ]
-  then
-     wget -q -P $STRATOS_PACK_PATH $WSO2_MB_URL/$WSO2_MB_FILE
   fi
 
   if [ ! -e $STRATOS_PACK_PATH/$MYSQLJ_FILE ]
@@ -243,10 +238,30 @@ function installer() {
   [ -d $STRATOS_SETUP_PATH ] || mkdir $STRATOS_SETUP_PATH
 
   cp -rpf $STRATOS_SOURCE_PATH/tools/stratos-installer/* $STRATOS_SETUP_PATH/
-  cp -f $STRATOS_SOURCE_PATH/products/stratos-manager/modules/distribution/target/apache-stratos-manager-*.zip $STRATOS_PACK_PATH/
-  cp -f $STRATOS_SOURCE_PATH/products/cloud-controller/modules/distribution/target/apache-stratos-cc-*.zip $STRATOS_PACK_PATH/
+
+  cp -f $STRATOS_SOURCE_PATH/products/stratos/modules/distribution/target/apache-stratos-*.zip $STRATOS_PACK_PATH/
   cp -f $STRATOS_SOURCE_PATH/products/autoscaler/modules/distribution/target/apache-stratos-autoscaler-*.zip $STRATOS_PACK_PATH/
   cp -f $STRATOS_SOURCE_PATH/extensions/cep/stratos-cep-extension/target/org.apache.stratos.cep.extension-*.jar $STRATOS_PACK_PATH
+
+  if [ ! -e $STRATOS_PACK_PATH/$ACTIVEMQ_FILE ]
+  then
+     wget -q -P $STRATOS_PACK_PATH $ACTIVEMQ_URL/$ACTIVEMQ_FILE
+  fi
+
+  # TODO this section is fragile and will break if the version of activemq changes
+  [ -e tmp-activemq ] || mkdir tmp-activemq
+  tar -C tmp-activemq -xzf $STRATOS_PACK_PATH/$ACTIVEMQ_FILE 
+  cp -f tmp-activemq/apache-activemq-5.8.0/lib/activemq-broker-5.8.0.jar $STRATOS_PACK_PATH/
+  cp -f tmp-activemq/apache-activemq-5.8.0/lib/activemq-client-5.8.0.jar $STRATOS_PACK_PATH/
+  cp -f tmp-activemq/apache-activemq-5.8.0/lib/geronimo-j2ee-management_1.1_spec-1.0.1.jar $STRATOS_PACK_PATH/
+  cp -f tmp-activemq/apache-activemq-5.8.0/lib/geronimo-jms_1.1_spec-1.1.1.jar $STRATOS_PACK_PATH/
+  rm -rf tmp-activemq
+
+  if [ ! -e $STRATOS_PACK_PATH/$HAWTBUF_FILE ]
+  then
+     wget -q -P $STRATOS_PACK_PATH $HAWTBUF_URL/$HAWTBUF_FILE
+  fi
+
 
   sed -i "s:^export setup_path=.*:export setup_path=$STRATOS_SETUP_PATH:g" $STRATOS_SETUP_PATH/conf/setup.conf
   sed -i "s:^export stratos_pack_path=.*:export stratos_pack_path=$STRATOS_PACK_PATH:g" $STRATOS_SETUP_PATH/conf/setup.conf
