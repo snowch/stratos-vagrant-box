@@ -322,7 +322,8 @@ function run_stratos() {
   . ~/.profile
 
   cd /home/vagrant/stratos/apache-stratos-*
-  ./bin/wso2server.sh
+  chmod +x bin/*.sh
+  ./bin/stratos.sh
 
   popd
 }
