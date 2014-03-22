@@ -123,11 +123,41 @@ function downloads () {
   fi
 }
 
+function fix_git_tls_bug() {
+
+  pushd $PWD
+
+  if [ -d ~/git-openssl ]
+  then
+    # we have already setup git
+    return
+  fi
+  sudo apt-get install -y build-essential fakeroot dpkg-dev
+  mkdir ~/git-openssl
+  cd ~/git-openssl
+  sudo apt-get source -y git
+  sudo apt-get build-dep -y git
+  sudo apt-get install -y libcurl4-openssl-dev
+  sudo dpkg-source -x git_1.7.9.5-1.dsc
+  cd git-1.7.9.5
+  sudo sed -i 's/libcurl4-gnutls-dev/libcurl4-openssl-dev/g' debian/control
+  sudo sed -i '/^TEST =test$/d' debian/rules
+  sudo dpkg-buildpackage -rfakeroot -b
+  sudo dpkg -i ../git_1.7.9.5-1_i386.deb
+
+  popd
+}
+
 function prerequisites() {
 
   echo -e "\e[32mInstall prerequisite software\e[39m"
   sudo apt-get update
   sudo apt-get install -y --no-install-recommends git maven openjdk-7-jdk 
+
+  if [ "$(arch)" != "x86_64" ]
+  then
+    fix_git_tls_bug
+  fi
 
   sudo sh -c "
      export DEBIAN_FRONTEND=noninteractive
