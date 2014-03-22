@@ -306,8 +306,6 @@ function installer() {
   cd $STRATOS_SETUP_PATH
   chmod +x *.sh
 
-  echo 'y' | sudo ./clean.sh -u root -p password
-  
   [ -d $STRATOS_PATH ] || mkdir $STRATOS_PATH
   echo '' | sudo ./stratos-setup.sh -p all
 
@@ -323,21 +321,8 @@ function run_stratos() {
   grep '^export JAVA_HOME' ~/.profile || echo "export JAVA_HOME=$JAVA_HOME" >> ~/.profile
   . ~/.profile
 
-  tmux att -t stratos ||
-  tmux \
-    new -s stratos -n mb \; \
-    send-keys 'cd /home/vagrant/stratos/wso2mb-*; ./bin/wso2server.sh' C-m \; \
-    neww -n cep \; \
-    send-keys 'sleep 30; cd /home/vagrant/stratos/wso2cep-*; ./bin/wso2server.sh' C-m \; \
-    neww -n as \; \
-    send-keys 'sleep 60; cd /home/vagrant/stratos/apache-stratos-autoscaler-*; ./bin/stratos.sh' C-m \; \
-    neww -n cc \; \
-    send-keys 'sleep 90; cd /home/vagrant/stratos/apache-stratos-cc-*; ./bin/stratos.sh' C-m \; \
-    neww -n sm \; \
-    send-keys 'sleep 120; cd /home/vagrant/stratos/apache-stratos-manager-*; ./bin/stratos.sh' C-m \; \
-    neww -n bash \; \
-    send-keys 'cd /home/vagrant; ./stratos_dev.sh -h' C-m \; \
-    selectw -t bash 
+  cd /home/vagrant/stratos/apache-stratos-*
+  ./bin/wso2server.sh
 
   popd
 }
