@@ -33,7 +33,10 @@ MYSQLJ_FILE="mysql-connector-java-5.1.29.jar"
 HAWTBUF_URL="http://repo1.maven.org/maven2/org/fusesource/hawtbuf/hawtbuf/1.2"
 HAWTBUF_FILE="hawtbuf-1.2.jar"
 IP_ADDR="192.168.56.5"
-MB_PORT=5672
+PUPPET_IP_ADDR="127.0.0.1"
+PUPPET_HOSTNAME="puppet.stratos.com"
+MB_IP_ADDR="127.0.0.1"
+MB_PORT=61616
 CEP_PORT=7611
 DOMAINNAME="stratos.com"
 
@@ -262,40 +265,43 @@ function installer() {
      wget -q -P $STRATOS_PACK_PATH $HAWTBUF_URL/$HAWTBUF_FILE
   fi
 
-
-  sed -i "s:^export setup_path=.*:export setup_path=$STRATOS_SETUP_PATH:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export stratos_pack_path=.*:export stratos_pack_path=$STRATOS_PACK_PATH:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export stratos_path=.*:export stratos_path=$STRATOS_PATH:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export JAVA_HOME=.*:export JAVA_HOME=$JAVA_HOME:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export host_user=.*:export host_user=vagrant:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export mb_ip=.*:export mb_ip=$IP_ADDR:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export cep_ip=.*:export cep_ip=$IP_ADDR:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export cc_ip=.*:export cc_ip=$IP_ADDR:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export as_ip=.*:export as_ip=$IP_ADDR:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export sm_ip=.*:export sm_ip=$IP_ADDR:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export sm_ip=.*:export sm_ip=$IP_ADDR:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export puppet_ip=.*:export puppet_ip=$IP_ADDR:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  HOSTNAME=$(hostname --fqdn)
-  sed -i "s:^export puppet_hostname=.*:export puppet_hostname=$HOSTNAME:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export stratos_domain=.*:export stratos_domain=$DOMAINNAME:g" $STRATOS_SETUP_PATH/conf/setup.conf
+  sed -i "s:^export setup_path=.*:export setup_path=$STRATOS_SETUP_PATH:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export stratos_pack_path=.*:export stratos_pack_path=$STRATOS_PACK_PATH:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export stratos_path=.*:export stratos_path=$STRATOS_PATH:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export mysql_connector_jar=.*:export mysql_connector_jar=$STRATOS_PACK_PATH/$MYSQLJ_FILE:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export JAVA_HOME=.*:export JAVA_HOME=$JAVA_HOME:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export log_path=.*:export log_path=/home/vagrant/stratos-log:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export host_user=.*:export host_user=vagrant:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export stratos_domain=.*:export stratos_domain=$DOMAINNAME:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export machine_ip=.*:export machine_ip=\"127.0.0.1\":g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export offset=.*:export offset=0:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export mb_ip=.*:export mb_ip=$MB_IP_ADDR:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export mb_port=.*:export mb_port=$MB_PORT:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export puppet_ip=.*:export puppet_ip=$PUPPET_IP_ADDR:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export puppet_hostname=.*:export puppet_hostname=$PUPPET_HOSTNAME:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
   # set puppet_environment to a dummy value
-  sed -i "s:^export puppet_environment=.*:export puppet_environment=XXXXXXXXXXXXXXXXX:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export JAVA_HOME=.*:export JAVA_HOME=$JAVA_HOME:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export cep_artifacts_path=.*:export cep_artifacts_path=$STRATOS_SOURCE_PATH/extensions/cep/artifacts/:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export mysql_connector_jar=.*:export mysql_connector_jar=$STRATOS_PACK_PATH/$MYSQLJ_FILE:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export userstore_db_pass=.*:export userstore_db_pass=password:g" $STRATOS_SETUP_PATH/conf/setup.conf
+  sed -i "s:^export puppet_environment=.*:export puppet_environment=XXXXXXXXXXXXXXXXX:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export cep_artifacts_path=.*:export cep_artifacts_path=$STRATOS_SOURCE_PATH/extensions/cep/artifacts/:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+
+  sed -i "s:^export userstore_db_hostname=.*:export userstore_db_hostname=\"localhost\":g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export userstore_db_schema=.*:export userstore_db_schema=\"userstore\":g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export userstore_db_port=.*:export userstore_db_port=\"3306\":g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export userstore_db_user=.*:export userstore_db_user=\"root\":g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export userstore_db_pass=.*:export userstore_db_pass=\"password\":g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
 
   # pick up the users IaaS settings
   source /home/vagrant/iaas.conf
 
+  # Not apply the changes to stratos-setup.conf for each of the IaaS
+
   #EC2
-  sed -i "s:^export ec2_provider_enabled=.*:export ec2_provider_enabled='$ec2_provider_enabled':g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export ec2_identity=.*:export ec2_identity='$ec2_identity':g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export ec2_credential=.*:export ec2_credential='$ec2_credential':g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export ec2_keypair_name=.*:export ec2_keypair_name='$ec2_keypair_name':g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export ec2_owner_id=.*:export ec2_owner_id='$ec2_owner_id':g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export ec2_availability_zone=.*:export ec2_availability_zone='$ec2_availability_zone':g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export ec2_security_groups=.*:export ec2_security_groups='$ec2_security_groups':g" $STRATOS_SETUP_PATH/conf/setup.conf
+  sed -i "s:^export ec2_provider_enabled=.*:export ec2_provider_enabled='$ec2_provider_enabled':g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export ec2_identity=.*:export ec2_identity='$ec2_identity':g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export ec2_credential=.*:export ec2_credential='$ec2_credential':g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export ec2_keypair_name=.*:export ec2_keypair_name='$ec2_keypair_name':g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export ec2_owner_id=.*:export ec2_owner_id='$ec2_owner_id':g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export ec2_availability_zone=.*:export ec2_availability_zone='$ec2_availability_zone':g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export ec2_security_groups=.*:export ec2_security_groups='$ec2_security_groups':g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
 
   cd $STRATOS_SETUP_PATH
   chmod +x *.sh
