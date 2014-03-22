@@ -309,7 +309,7 @@ function installer() {
   echo 'y' | sudo ./clean.sh -u root -p password
   
   [ -d $STRATOS_PATH ] || mkdir $STRATOS_PATH
-  echo '' | sudo ./setup.sh -p all
+  echo '' | sudo ./stratos-setup.sh -p all
 
   popd
 }
