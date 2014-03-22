@@ -35,6 +35,7 @@ ANDES_CLIENT_JAR_FILE="andes-client-0.13.wso2v8.jar"
 IP_ADDR="192.168.56.5"
 MB_PORT=5672
 CEP_PORT=7611
+DOMAINNAME="stratos.com"
 
 if [ "$(arch)" == "x86_64" ]
 then
@@ -186,7 +187,7 @@ function puppet_setup() {
   then
     git clone https://github.com/thilinapiy/puppetinstall
     cd puppetinstall
-    echo '' | sudo ./puppetinstall -m -d stratos.com
+    echo '' | sudo ./puppetinstall -m -d $DOMAINNAME
   fi
 
   [ -d /etc/puppet/modules/agent/files ] || sudo mkdir -p /etc/puppet/modules/agent/files
@@ -196,7 +197,7 @@ function puppet_setup() {
   sudo cp -R $STRATOS_SOURCE_PATH/products/cartridge-agent/modules/distribution/target/apache-stratos-cartridge-agent-*-bin.zip /etc/puppet/modules/agent/files
   sudo cp -R $STRATOS_SOURCE_PATH/products/load-balancer/modules/distribution/target/apache-stratos-load-balancer-*.zip /etc/puppet/modules/agent/files
 
-  sudo sh -c 'echo "*.stratos.com" > /etc/puppet/autosign.conf'
+  sudo sh -c 'echo "*.$DOMAINNAME" > /etc/puppet/autosign.conf'
 
   # TODO move hardcoded strings to variables
   sudo sed -i -E "s:(\s*[$]local_package_dir.*=).*$:\1 \"/home/vagrant/packs\":g" /etc/puppet/manifests/nodes.pp
@@ -261,7 +262,6 @@ function installer() {
   sed -i "s:^export puppet_ip=.*:export puppet_ip=$IP_ADDR:g" $STRATOS_SETUP_PATH/conf/setup.conf
   HOSTNAME=$(hostname --fqdn)
   sed -i "s:^export puppet_hostname=.*:export puppet_hostname=$HOSTNAME:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  DOMAINNAME=$(hostname --domain)
   sed -i "s:^export stratos_domain=.*:export stratos_domain=$DOMAINNAME:g" $STRATOS_SETUP_PATH/conf/setup.conf
   # set puppet_environment to a dummy value
   sed -i "s:^export puppet_environment=.*:export puppet_environment=XXXXXXXXXXXXXXXXX:g" $STRATOS_SETUP_PATH/conf/setup.conf
