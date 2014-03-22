@@ -36,7 +36,12 @@ IP_ADDR="192.168.56.5"
 MB_PORT=5672
 CEP_PORT=7611
 
-JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64/
+if [ "$(arch)" == "x86_64" ]
+then
+   JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64/
+else
+   JAVA_HOME=/usr/lib/jvm/java-7-openjdk-i386/
+fi
 
 progname=$0
 progdir=$(dirname $progname)
@@ -167,13 +172,20 @@ function puppet_setup() {
   # TODO move hardcoded strings to variables
   sudo sed -i -E "s:(\s*[$]truststore_password.*=).*$:\1 \"wso2carbon\":g" /etc/puppet/manifests/nodes.pp
 
+if [ "$(arch)" == "x86_64" ]
+then
+  JAVA_ARCH="x64"
+else
+  JAVA_ARCH="i586"
+fi
+
   sudo wget -q -c -P /etc/puppet/modules/java/files \
             --no-cookies --no-check-certificate \
             --header "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie" \
-            "http://download.oracle.com/otn-pub/java/jdk/7u51-b13/jdk-7u51-linux-x64.tar.gz"
+            "http://download.oracle.com/otn-pub/java/jdk/7u51-b13/jdk-7u51-linux-${JAVA_ARCH}.tar.gz"
 
-  sudo sed -i -E 's:(\s*[$]java_name.*=).*$:\1 "jdk1.7.0_51":g' /etc/puppet/manifests/nodes.pp
-  sudo sed -i -E 's:(\s*[$]java_distribution.*=).*$:\1 "jdk-7u51-linux-x64.tar.gz":g' /etc/puppet/manifests/nodes.pp
+  sudo sed -i -E "s:(\s*[$]java_name.*=).*$:\1 \"jdk1.7.0_51\":g" /etc/puppet/manifests/nodes.pp
+  sudo sed -i -E "s:(\s*[$]java_distribution.*=).*$:\1 \"jdk-7u51-linux-${JAVA_ARCH}.tar.gz\":g" /etc/puppet/manifests/nodes.pp
   popd 
 }
 
@@ -187,11 +199,14 @@ function installer() {
 
   echo -e "\e[32mRunning Stratos Installer\e[39m"
 
+  pushd $PWD
+
   # tmux is useful for starting all the services in different windows
   sudo apt-get install -y tmux
 
-  pushd $PWD
-  cp -rpf $STRATOS_SOURCE_PATH/tools/stratos-installer $STRATOS_SETUP_PATH
+  [ -d $STRATOS_SETUP_PATH ] || mkdir $STRATOS_SETUP_PATH
+
+  cp -rpf $STRATOS_SOURCE_PATH/tools/stratos-installer/* $STRATOS_SETUP_PATH/
   cp -f $STRATOS_SOURCE_PATH/products/stratos-manager/modules/distribution/target/apache-stratos-manager-*.zip $STRATOS_PACK_PATH/
   cp -f $STRATOS_SOURCE_PATH/products/cloud-controller/modules/distribution/target/apache-stratos-cc-*.zip $STRATOS_PACK_PATH/
   cp -f $STRATOS_SOURCE_PATH/products/autoscaler/modules/distribution/target/apache-stratos-autoscaler-*.zip $STRATOS_PACK_PATH/
