@@ -1,5 +1,7 @@
-Stratos Runtime Environment
-===========================
+Stratos Runtime and Development Environments
+============================================
+
+## Stratos Runtime Environment
 
 ### Overview
 
@@ -59,3 +61,17 @@ When cloudstack is running, open a browser from your host to 'http://192.168.56.
 ### Issues
 
 - Proxy setup has not been tested or documented
+
+
+## Stratos Development Environment
+
+Ssh into your Stratos Runtime Environment and run this command:
+
+ - ```./stratos_dev.sh -d``` # sets up ubuntu desktop + eclipse and imports Stratos source code
+
+Login to your development environment using rdesktop (*nix) or Remote Desktop Connection (windows):
+
+ - Host: 192.168.56.5
+ - Port: 3389
+ - Username: vagrant
+ - Password: vagrant
