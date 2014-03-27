@@ -26,14 +26,17 @@ STRATOS_SOURCE_PATH="/home/vagrant/incubator-stratos"
 STRATOS_PATH="/home/vagrant/stratos"
 WSO2_CEP_URL="http://people.apache.org/~chsnow"
 WSO2_CEP_FILE="wso2cep-3.0.0.zip"
-WSO2_MB_URL="http://people.apache.org/~chsnow"
-WSO2_MB_FILE="wso2mb-2.1.0.zip"
+ACTIVEMQ_URL="http://www.mirrorservice.org/sites/ftp.apache.org/activemq/apache-activemq/5.8.0"
+ACTIVEMQ_FILE="apache-activemq-5.8.0-bin.tar.gz"
 MYSQLJ_URL="http://repo1.maven.org/maven2/mysql/mysql-connector-java/5.1.29"
 MYSQLJ_FILE="mysql-connector-java-5.1.29.jar"
-ANDES_CLIENT_JAR_URL="http://maven.wso2.org/nexus/content/groups/wso2-public/org/wso2/andes/wso2/andes-client/0.13.wso2v8/"
-ANDES_CLIENT_JAR_FILE="andes-client-0.13.wso2v8.jar"
+HAWTBUF_URL="http://repo1.maven.org/maven2/org/fusesource/hawtbuf/hawtbuf/1.2"
+HAWTBUF_FILE="hawtbuf-1.2.jar"
 IP_ADDR="192.168.56.5"
-MB_PORT=5672
+PUPPET_IP_ADDR="127.0.0.1"
+PUPPET_HOSTNAME="puppet.stratos.com"
+MB_IP_ADDR="127.0.0.1"
+MB_PORT=61616
 CEP_PORT=7611
 DOMAINNAME="stratos.com"
 
@@ -48,7 +51,6 @@ progname=$0
 progdir=$(dirname $progname)
 progdir=$(cd $progdir && pwd -P || echo $progdir)
 progarg=''
-
 
 function finish {
    echo "\n\nReceived SIGINT. Exiting..."
@@ -79,13 +81,13 @@ function main() {
 
 function usage () {
    cat <<EOF
-Usage: $progname -[f|c|b|p|n|r|k|d|h]
+Usage: $progname [-f|c|b|p|n|r|k|d|h]
 where:
     -f first setup (checkout, build, puppet setup, stratos installer) 
     -c checkout stratos
     -b build stratos
     -p puppet setup
-    -n start stratos installer
+    -n run stratos installer
     -r run stratos in tmux (use CTRL+B then window number to switch tmux windows)
     -k kill stratos tmux session (kills applications runnings in tmux windows)
     -d setup a development environment (installs lubuntu desktop and eclipse)
@@ -106,11 +108,6 @@ function downloads () {
   if [ ! -e $STRATOS_PACK_PATH/$WSO2_CEP_FILE ]
   then
      wget -q -P $STRATOS_PACK_PATH $WSO2_CEP_URL/$WSO2_CEP_FILE
-  fi
-  
-  if [ ! -e $STRATOS_PACK_PATH/$WSO2_MB_FILE ]
-  then
-     wget -q -P $STRATOS_PACK_PATH $WSO2_MB_URL/$WSO2_MB_FILE
   fi
 
   if [ ! -e $STRATOS_PACK_PATH/$MYSQLJ_FILE ]
@@ -237,58 +234,91 @@ function installer() {
 
   pushd $PWD
 
+  [ -d $STRATOS_SETUP_PATH ] || mkdir $STRATOS_SETUP_PATH
+
+  if [ -d $STRATOS_PATH ]
+  then
+    read -p "$STRATOS_PATH exist. Delete this folder and the stratos 'userstore' database [y/n]? " answer
+    if [[ $answer == y ]] ; then
+        sudo rm -rf $STRATOS_PATH
+        mysql -u root -p'password' -e 'drop database if exists userstore;' mysql
+    else
+        echo "Can't install on top of existing $STRATOS_HOME folder.  Exiting."
+        exit 1
+    fi
+  fi
+
   # tmux is useful for starting all the services in different windows
   sudo apt-get install -y tmux
 
-  [ -d $STRATOS_SETUP_PATH ] || mkdir $STRATOS_SETUP_PATH
-
   cp -rpf $STRATOS_SOURCE_PATH/tools/stratos-installer/* $STRATOS_SETUP_PATH/
-  cp -f $STRATOS_SOURCE_PATH/products/stratos-manager/modules/distribution/target/apache-stratos-manager-*.zip $STRATOS_PACK_PATH/
-  cp -f $STRATOS_SOURCE_PATH/products/cloud-controller/modules/distribution/target/apache-stratos-cc-*.zip $STRATOS_PACK_PATH/
+
+  cp -f $STRATOS_SOURCE_PATH/products/stratos/modules/distribution/target/apache-stratos-*.zip $STRATOS_PACK_PATH/
   cp -f $STRATOS_SOURCE_PATH/products/autoscaler/modules/distribution/target/apache-stratos-autoscaler-*.zip $STRATOS_PACK_PATH/
   cp -f $STRATOS_SOURCE_PATH/extensions/cep/stratos-cep-extension/target/org.apache.stratos.cep.extension-*.jar $STRATOS_PACK_PATH
 
-  sed -i "s:^export setup_path=.*:export setup_path=$STRATOS_SETUP_PATH:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export stratos_pack_path=.*:export stratos_pack_path=$STRATOS_PACK_PATH:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export stratos_path=.*:export stratos_path=$STRATOS_PATH:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export JAVA_HOME=.*:export JAVA_HOME=$JAVA_HOME:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export host_user=.*:export host_user=vagrant:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export mb_ip=.*:export mb_ip=$IP_ADDR:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export cep_ip=.*:export cep_ip=$IP_ADDR:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export cc_ip=.*:export cc_ip=$IP_ADDR:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export as_ip=.*:export as_ip=$IP_ADDR:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export sm_ip=.*:export sm_ip=$IP_ADDR:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export sm_ip=.*:export sm_ip=$IP_ADDR:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export puppet_ip=.*:export puppet_ip=$IP_ADDR:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  HOSTNAME=$(hostname --fqdn)
-  sed -i "s:^export puppet_hostname=.*:export puppet_hostname=$HOSTNAME:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export stratos_domain=.*:export stratos_domain=$DOMAINNAME:g" $STRATOS_SETUP_PATH/conf/setup.conf
+  if [ ! -e $STRATOS_PACK_PATH/$ACTIVEMQ_FILE ]
+  then
+     wget -q -P $STRATOS_PACK_PATH $ACTIVEMQ_URL/$ACTIVEMQ_FILE
+  fi
+
+  # TODO this section is fragile and will break if the version of activemq changes
+  [ -e tmp-activemq ] || mkdir tmp-activemq
+  tar -C tmp-activemq -xzf $STRATOS_PACK_PATH/$ACTIVEMQ_FILE 
+  cp -f tmp-activemq/apache-activemq-5.8.0/lib/activemq-broker-5.8.0.jar $STRATOS_PACK_PATH/
+  cp -f tmp-activemq/apache-activemq-5.8.0/lib/activemq-client-5.8.0.jar $STRATOS_PACK_PATH/
+  cp -f tmp-activemq/apache-activemq-5.8.0/lib/geronimo-j2ee-management_1.1_spec-1.0.1.jar $STRATOS_PACK_PATH/
+  cp -f tmp-activemq/apache-activemq-5.8.0/lib/geronimo-jms_1.1_spec-1.1.1.jar $STRATOS_PACK_PATH/
+  rm -rf tmp-activemq
+
+  if [ ! -e $STRATOS_PACK_PATH/$HAWTBUF_FILE ]
+  then
+     wget -q -P $STRATOS_PACK_PATH $HAWTBUF_URL/$HAWTBUF_FILE
+  fi
+
+  sed -i "s:^export setup_path=.*:export setup_path=$STRATOS_SETUP_PATH:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export stratos_pack_path=.*:export stratos_pack_path=$STRATOS_PACK_PATH:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export stratos_path=.*:export stratos_path=$STRATOS_PATH:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export mysql_connector_jar=.*:export mysql_connector_jar=$STRATOS_PACK_PATH/$MYSQLJ_FILE:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export JAVA_HOME=.*:export JAVA_HOME=$JAVA_HOME:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export log_path=.*:export log_path=/home/vagrant/stratos-log:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export host_user=.*:export host_user=vagrant:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export stratos_domain=.*:export stratos_domain=$DOMAINNAME:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export machine_ip=.*:export machine_ip=\"127.0.0.1\":g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export offset=.*:export offset=0:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export mb_ip=.*:export mb_ip=$MB_IP_ADDR:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export mb_port=.*:export mb_port=$MB_PORT:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export puppet_ip=.*:export puppet_ip=$PUPPET_IP_ADDR:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export puppet_hostname=.*:export puppet_hostname=$PUPPET_HOSTNAME:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
   # set puppet_environment to a dummy value
-  sed -i "s:^export puppet_environment=.*:export puppet_environment=XXXXXXXXXXXXXXXXX:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export JAVA_HOME=.*:export JAVA_HOME=$JAVA_HOME:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export cep_artifacts_path=.*:export cep_artifacts_path=$STRATOS_SOURCE_PATH/extensions/cep/artifacts/:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export mysql_connector_jar=.*:export mysql_connector_jar=$STRATOS_PACK_PATH/$MYSQLJ_FILE:g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export userstore_db_pass=.*:export userstore_db_pass=password:g" $STRATOS_SETUP_PATH/conf/setup.conf
+  sed -i "s:^export puppet_environment=.*:export puppet_environment=XXXXXXXXXXXXXXXXX:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export cep_artifacts_path=.*:export cep_artifacts_path=$STRATOS_SOURCE_PATH/extensions/cep/artifacts/:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+
+  sed -i "s:^export userstore_db_hostname=.*:export userstore_db_hostname=\"localhost\":g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export userstore_db_schema=.*:export userstore_db_schema=\"userstore\":g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export userstore_db_port=.*:export userstore_db_port=\"3306\":g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export userstore_db_user=.*:export userstore_db_user=\"root\":g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export userstore_db_pass=.*:export userstore_db_pass=\"password\":g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
 
   # pick up the users IaaS settings
   source /home/vagrant/iaas.conf
 
+  # Not apply the changes to stratos-setup.conf for each of the IaaS
+
   #EC2
-  sed -i "s:^export ec2_provider_enabled=.*:export ec2_provider_enabled='$ec2_provider_enabled':g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export ec2_identity=.*:export ec2_identity='$ec2_identity':g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export ec2_credential=.*:export ec2_credential='$ec2_credential':g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export ec2_keypair_name=.*:export ec2_keypair_name='$ec2_keypair_name':g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export ec2_owner_id=.*:export ec2_owner_id='$ec2_owner_id':g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export ec2_availability_zone=.*:export ec2_availability_zone='$ec2_availability_zone':g" $STRATOS_SETUP_PATH/conf/setup.conf
-  sed -i "s:^export ec2_security_groups=.*:export ec2_security_groups='$ec2_security_groups':g" $STRATOS_SETUP_PATH/conf/setup.conf
+  sed -i "s:^export ec2_provider_enabled=.*:export ec2_provider_enabled='$ec2_provider_enabled':g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export ec2_identity=.*:export ec2_identity='$ec2_identity':g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export ec2_credential=.*:export ec2_credential='$ec2_credential':g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export ec2_keypair_name=.*:export ec2_keypair_name='$ec2_keypair_name':g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export ec2_owner_id=.*:export ec2_owner_id='$ec2_owner_id':g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export ec2_availability_zone=.*:export ec2_availability_zone='$ec2_availability_zone':g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export ec2_security_groups=.*:export ec2_security_groups='$ec2_security_groups':g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
 
   cd $STRATOS_SETUP_PATH
   chmod +x *.sh
 
-  echo 'y' | sudo ./clean.sh -u root -p password
-  
   [ -d $STRATOS_PATH ] || mkdir $STRATOS_PATH
-  echo '' | sudo ./setup.sh -p all
+  echo '' | sudo ./stratos-setup.sh -u vagrant -p all -s
 
   popd
 }
@@ -302,30 +332,14 @@ function run_stratos() {
   grep '^export JAVA_HOME' ~/.profile || echo "export JAVA_HOME=$JAVA_HOME" >> ~/.profile
   . ~/.profile
 
-  tmux att -t stratos ||
-  tmux \
-    new -s stratos -n mb \; \
-    send-keys 'cd /home/vagrant/stratos/wso2mb-*; ./bin/wso2server.sh' C-m \; \
-    neww -n cep \; \
-    send-keys 'sleep 30; cd /home/vagrant/stratos/wso2cep-*; ./bin/wso2server.sh' C-m \; \
-    neww -n as \; \
-    send-keys 'sleep 60; cd /home/vagrant/stratos/apache-stratos-autoscaler-*; ./bin/stratos.sh' C-m \; \
-    neww -n cc \; \
-    send-keys 'sleep 90; cd /home/vagrant/stratos/apache-stratos-cc-*; ./bin/stratos.sh' C-m \; \
-    neww -n sm \; \
-    send-keys 'sleep 120; cd /home/vagrant/stratos/apache-stratos-manager-*; ./bin/stratos.sh' C-m \; \
-    neww -n bash \; \
-    send-keys 'cd /home/vagrant; ./stratos_dev.sh -h' C-m \; \
-    selectw -t bash 
+  echo "TODO implement me based on stratos-setup.sh"
 
   popd
 }
 
 function kill_stratos() {
    
-   echo -e "\e[32mKill tmux and processes running in tmux windows?\e[39m"
-   read -p "[Enter] key to continue, [CTRL+C] to cancel."
-   tmux kill-session >/dev/null 2>&1 
+  echo "TODO implement me based on stratos-setup.sh"
 }
 
 function development_environment() {
