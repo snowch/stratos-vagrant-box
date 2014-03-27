@@ -52,7 +52,7 @@ Vagrant.configure("2") do |config|
     stratos.vm.provision "shell", inline: "ln -sf /vagrant/iaas.conf /home/vagrant/iaas.conf", privileged: false
 
     stratos.vm.provider "virtualbox" do |v|
-      v.customize ["modifyvm", :id, "--memory", 4096]
+      v.customize ["modifyvm", :id, "--memory", 2048]
     end
   end
 
