@@ -52,7 +52,6 @@ progdir=$(dirname $progname)
 progdir=$(cd $progdir && pwd -P || echo $progdir)
 progarg=''
 
-
 function finish {
    echo "\n\nReceived SIGINT. Exiting..."
    exit
@@ -82,13 +81,13 @@ function main() {
 
 function usage () {
    cat <<EOF
-Usage: $progname -[f|c|b|p|n|r|k|d|h]
+Usage: $progname [-f|c|b|p|n|r|k|d|h]
 where:
     -f first setup (checkout, build, puppet setup, stratos installer) 
     -c checkout stratos
     -b build stratos
     -p puppet setup
-    -n start stratos installer
+    -n run stratos installer
     -r run stratos in tmux (use CTRL+B then window number to switch tmux windows)
     -k kill stratos tmux session (kills applications runnings in tmux windows)
     -d setup a development environment (installs lubuntu desktop and eclipse)
@@ -235,10 +234,22 @@ function installer() {
 
   pushd $PWD
 
+  [ -d $STRATOS_SETUP_PATH ] || mkdir $STRATOS_SETUP_PATH
+
+  if [ -d $STRATOS_PATH ]
+  then
+    read -p "$STRATOS_PATH exist. Delete this folder and the stratos 'userstore' database [y/n]? " answer
+    if [[ $answer == y ]] ; then
+        sudo rm -rf $STRATOS_PATH
+        mysql -u root -p'password' -e 'drop database if exists userstore;' mysql
+    else
+        echo "Can't install on top of existing $STRATOS_HOME folder.  Exiting."
+        exit 1
+    fi
+  fi
+
   # tmux is useful for starting all the services in different windows
   sudo apt-get install -y tmux
-
-  [ -d $STRATOS_SETUP_PATH ] || mkdir $STRATOS_SETUP_PATH
 
   cp -rpf $STRATOS_SOURCE_PATH/tools/stratos-installer/* $STRATOS_SETUP_PATH/
 
@@ -307,7 +318,7 @@ function installer() {
   chmod +x *.sh
 
   [ -d $STRATOS_PATH ] || mkdir $STRATOS_PATH
-  echo '' | sudo ./stratos-setup.sh -p all
+  echo '' | sudo ./stratos-setup.sh -u vagrant -p all -s
 
   popd
 }
@@ -321,18 +332,14 @@ function run_stratos() {
   grep '^export JAVA_HOME' ~/.profile || echo "export JAVA_HOME=$JAVA_HOME" >> ~/.profile
   . ~/.profile
 
-  cd /home/vagrant/stratos/apache-stratos-*
-  chmod +x bin/*.sh
-  ./bin/stratos.sh
+  echo "TODO implement me based on stratos-setup.sh"
 
   popd
 }
 
 function kill_stratos() {
    
-   echo -e "\e[32mKill tmux and processes running in tmux windows?\e[39m"
-   read -p "[Enter] key to continue, [CTRL+C] to cancel."
-   tmux kill-session >/dev/null 2>&1 
+  echo "TODO implement me based on stratos-setup.sh"
 }
 
 function development_environment() {
