@@ -32,6 +32,7 @@ Tested with:
 
  - Edit the iaas.conf to point to your IaaS (only AWS is supported at the moment)
  - ```vagrant up stratos``` # starts the stratos box
+ - ```vagrant provision stratos``` # copy the setup script to the guest
  - ```vagrant ssh stratos``` # log in to the stratos box
  - ```./stratos_dev.sh -h``` # show the stratos setup instructions
 
