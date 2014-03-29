@@ -47,6 +47,9 @@ else
    JAVA_HOME=/usr/lib/jvm/java-7-openjdk-i386/
 fi
 
+grep '^export JAVA_HOME' ~/.profile || echo "export JAVA_HOME=$JAVA_HOME" >> ~/.profile
+. ~/.profile
+
 progname=$0
 progdir=$(dirname $progname)
 progdir=$(cd $progdir && pwd -P || echo $progdir)
@@ -190,9 +193,9 @@ function puppet_setup() {
   [ -d /etc/puppet/modules/agent/files ] || sudo mkdir -p /etc/puppet/modules/agent/files
 
   sudo cp -R $STRATOS_SOURCE_PATH/tools/puppet3/manifests/* /etc/puppet/manifests/
-  sudo cp -R $STRATOS_SOURCE_PATH/tools/puppet3/modules/* /etc/puppet/modules/
-  sudo cp -R $STRATOS_SOURCE_PATH/products/cartridge-agent/modules/distribution/target/apache-stratos-cartridge-agent-*-bin.zip /etc/puppet/modules/agent/files
-  sudo cp -R $STRATOS_SOURCE_PATH/products/load-balancer/modules/distribution/target/apache-stratos-load-balancer-*.zip /etc/puppet/modules/agent/files
+  sudo cp $STRATOS_SOURCE_PATH/tools/puppet3/modules/* /etc/puppet/modules/
+  sudo cp $STRATOS_SOURCE_PATH/products/cartridge-agent/modules/distribution/target/apache-stratos-cartridge-agent-*-bin.zip /etc/puppet/modules/agent/files
+  sudo cp $STRATOS_SOURCE_PATH/products/load-balancer/modules/distribution/target/apache-stratos-load-balancer-*.zip /etc/puppet/modules/agent/files
 
   sudo sh -c 'echo "*.$DOMAINNAME" > /etc/puppet/autosign.conf'
 
@@ -329,8 +332,6 @@ function run_stratos() {
 
   cd /home/vagrant
 
-  grep '^export JAVA_HOME' ~/.profile || echo "export JAVA_HOME=$JAVA_HOME" >> ~/.profile
-  . ~/.profile
 
   echo "TODO implement me based on stratos-setup.sh"
 
@@ -347,7 +348,7 @@ function development_environment() {
    echo -e "\e[32mSetting up development environment.\e[39m"
 
    pushd $PWD
-   sudo apt-get install -y --no-install-recommends lubuntu-desktop eclipse-jdt xvfb lxde
+   sudo apt-get install -y --no-install-recommends lubuntu-desktop eclipse-jdt xvfb lxde firefox
    sudo apt-get install -y --no-install-recommends vnc4server xrdp
 
    echo lxsession > ~/.xsession
