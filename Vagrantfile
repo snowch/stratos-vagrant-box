@@ -34,7 +34,7 @@ Vagrant.configure("2") do |config|
     #config.vm.box = "opscode-ubuntu-12.04-32"
     #config.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-12.04-i386_chef-provisionerless.box"   
 
-    stratos.vm.hostname = "paas.stratos.com"
+    config.vm.hostname = "paas.stratos.com"
     
     # put stratos on the same private network as cloudstack so they can talk to each other
     config.vm.network :private_network, :ip => STRATOS_IP
