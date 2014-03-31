@@ -1,16 +1,29 @@
 #### Cloudstack Runtime ####
 
-- Setup **Cloudstack** box:
+##### Setup **Cloudstack** box:
 
- - ```vagrant up cloudstack``` # starts the cloudstack box
- - ```ACTION='setup-cloudstack' vagrant provision cloudstack``` # setup-cloudstack action first increases the xen kernel memory and reboots
- - ```ACTION='setup-cloudstack' vagrant provision cloudstack``` # setup-cloudstack action subsequent run checks out, builds, runs and provisions cloudstack. 
- - ```vagrant halt cloudstack``` # stop the cloudstack box when finished using it
+Get the cloudstack box:
+```vagrant box add cloudstack-vagrant-box https://github.com/snowch/cloudstack-vagrant-box/releases/download/v0.1/devcloud.box```
 
-- Run **Cloudstack** box
+Start up the box:
+```vagrant up cloudstack```
 
- - ```vagrant up cloudstack``` # starts the cloudstack box
- - ```vagrant reload cloudstack && ACTION='run-cloudstack' vagrant provision cloudstack``` # this runs cloudstack
- - ```vagrant halt cloudstack``` # stop the cloudstack box when finished using it
+SSH into the box:
+```vagrant ssh cloudstack```
+
+Checkout, build and setup cloudstack (this step will take a long time!):
+```./cloudstack.sh -i```
+
+Run Cloudstack:
+```./cloudstack.sh -r```
+
+Use Cloudstack:
 
 When cloudstack is running, open a browser from your host to 'http://192.168.56.10:8080/client' and login with 'admin/password'. After logging in, check "Infrastructure > System VMs".  When the VM State shows "Running" and Agent State shows "Up" for both VMs, you should be able to create an instance.  If you don't see a template when creating an instance, wait a few minutes because cloudstack is probably still setting it self up in the background.
+
+Shutdown the box:
+ ```vagrant halt cloudstack```
+ 
+##### Subsequent runs
+
+On subsequent, after ```vagrant up```, exectute ```./cloudstack.sh -r```.
