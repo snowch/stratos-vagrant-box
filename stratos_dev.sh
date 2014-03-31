@@ -277,7 +277,7 @@ function installer() {
   fi
 
   sed -i "s:^export setup_path=.*:export setup_path=$STRATOS_SETUP_PATH:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
-  sed -i "s:^export stratos_pack_path=.*:export stratos_pack_path=$STRATOS_PACK_PATH:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export stratos_packs=.*:export stratos_packs=$STRATOS_PACK_PATH:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
   sed -i "s:^export stratos_path=.*:export stratos_path=$STRATOS_PATH:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
   sed -i "s:^export mysql_connector_jar=.*:export mysql_connector_jar=$STRATOS_PACK_PATH/$MYSQLJ_FILE:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
   sed -i "s:^export JAVA_HOME=.*:export JAVA_HOME=$JAVA_HOME:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
