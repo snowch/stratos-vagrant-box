@@ -63,7 +63,7 @@ function finish {
 trap finish SIGINT
 
 function main() {
-  while getopts 'fcbpndh' flag; do
+  while getopts 'fcbpndskth' flag; do
     progarg=${flag}
     case "${flag}" in
       f) initial_setup ; exit $? ;;
@@ -72,6 +72,9 @@ function main() {
       p) puppet_setup; exit $? ;;
       n) installer; exit $? ;;
       d) development_environment; exit $? ;;
+      s) start_servers; exit $? ;;
+      k) kill_servers; exit $? ;;
+      t) servers_status; exit $? ;;
       h) usage ; exit $? ;;
       \?) usage ; exit $? ;;
       *) usage ; exit $? ;;
@@ -121,6 +124,14 @@ Where:
        Hostname: $IP_ADDR
        Username: vagrant
        Password: vagrant
+
+    -s Start activemq and stratos
+       The servers will take some time to startup. Check status with '-t'
+       
+    -k Kill activemq and stratos
+       Stratos takes some time to shutdown. Check status with '-t'
+
+    -t Show activemq and stratos server status.
 
     -h show this help message
 
@@ -351,21 +362,36 @@ function installer() {
   popd
 }
 
-function run_stratos() {
+function start_servers() {
 
-  pushd $PWD
+  $STRATOS_PATH/apache-activemq-5.8.0/bin/activemq restart
 
-  cd /home/vagrant
-
-
-  echo "TODO implement me based on stratos-setup.sh"
-
-  popd
+  $STRATOS_PATH/apache-stratos/bin/stratos.sh --restart
 }
 
-function kill_stratos() {
-   
-  echo "TODO implement me based on stratos-setup.sh"
+function kill_servers() {
+  
+  set +e 
+  $STRATOS_PATH/apache-stratos/bin/stratos.sh --stop
+
+  $STRATOS_PATH/apache-activemq-5.8.0/bin/activemq stop
+}
+
+function servers_status() {
+
+  $STRATOS_PATH/apache-activemq-5.8.0/bin/activemq status | tail -1
+
+  set +e 
+  stratos_pid=$(cat $STRATOS_PATH/apache-stratos/wso2carbon.pid)
+  java_pids=$(pgrep -u vagrant -f java)
+
+  echo $java_pids | grep -q "$stratos_pid"
+  if [ $? -eq 0 ]
+  then
+    echo "Stratos is running (pid '$stratos_pid')"
+    exit 0
+  fi
+  echo "Stratos not running"
 }
 
 function development_environment() {
