@@ -91,6 +91,9 @@ Where:
        ----------------------------------------------------------------
        IMPORTANT: 
        The first time you run this script must be with the command '-f'
+
+       You must also configure the iaas.conf file in the /home/vagrant
+       folder with the details of your IaaS.
        ----------------------------------------------------------------
 
     -f perform a complete setup of the stratos runtime environment
