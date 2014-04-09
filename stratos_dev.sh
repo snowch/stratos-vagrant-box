@@ -47,7 +47,7 @@ else
    JAVA_HOME=/usr/lib/jvm/java-7-openjdk-i386/
 fi
 
-grep '^export JAVA_HOME' ~/.profile || echo "export JAVA_HOME=$JAVA_HOME" >> ~/.profile
+grep -q '^export JAVA_HOME' ~/.profile || echo "export JAVA_HOME=$JAVA_HOME" >> ~/.profile
 . ~/.profile
 
 progname=$0
@@ -63,7 +63,7 @@ function finish {
 trap finish SIGINT
 
 function main() {
-  while getopts 'fcbpnrkdh' flag; do
+  while getopts 'fcbpndh' flag; do
     progarg=${flag}
     case "${flag}" in
       f) initial_setup ; exit $? ;;
@@ -71,8 +71,6 @@ function main() {
       b) maven_clean_install; exit $? ;;
       p) puppet_setup; exit $? ;;
       n) installer; exit $? ;;
-      r) run_stratos; exit $? ;;
-      k) kill_stratos; exit $? ;;
       d) development_environment; exit $? ;;
       h) usage ; exit $? ;;
       \?) usage ; exit $? ;;
@@ -84,20 +82,49 @@ function main() {
 
 function usage () {
    cat <<EOF
-Usage: $progname [-f|c|b|p|n|r|k|d|h]
-where:
-    -f first setup (checkout, build, puppet setup, stratos installer) 
-    -c checkout stratos
-    -b build stratos
-    -p puppet setup
-    -n run stratos installer
-    -r run stratos in tmux (use CTRL+B then window number to switch tmux windows)
-    -k kill stratos tmux session (kills applications runnings in tmux windows)
-    -d setup a development environment (installs lubuntu desktop and eclipse)
+Usage: $progname -[f|c|b|p|n|d|h]
+
+Where:
+       ----------------------------------------------------------------
+       IMPORTANT: 
+       The first time you run this script must be with the command '-f'
+       ----------------------------------------------------------------
+
+    -f perform a complete setup of the stratos runtime environment
+
+       This command is the same as running:
+       $progname -c && $progname -b && $progname -p && $progname -n
+
+    -c Checkout Stratos 'master' code.  
+       Each time you run this command, this script will do a 'git pull'
+
+    -b Builds Stratos.  Equivalent to running: 'mvn clean install'
+       You will probably want to re-run this after you modify or pull new source 
+
+    -p Setup Puppet for Stratos. 
+       You will probably want to re-run this after you re-build Stratos.
+
+    -n Install Stratos (and startup Stratos).
+       You will probably want to re-run this after you re-setup Puppet.
+       Use 'tail -f /home/vagrant/stratos-log/stratos-setup.log' to watch output.
+
+       When you see the 'Servers Started' message, you should be able to connect
+       with your browser to:
+
+       Hostname: https://$IP_ADDR:9443
+       Username: admin
+       Password: admin
+
+    -d Setup a development environment with lubuntu desktop and eclipse.  
+
+       You can connect using rdesktop or Windows Remote Desktop Client.  
+       Hostname: $IP_ADDR
+       Username: vagrant
+       Password: vagrant
+
     -h show this help message
 
-The first option you run must be '-f, first setup'.
-All options can be re-run as often as required. 
+All commands can be re-run as often as required.
 EOF
    exit 0
 }
@@ -256,10 +283,6 @@ function installer() {
 
   cp -rpf $STRATOS_SOURCE_PATH/tools/stratos-installer/* $STRATOS_SETUP_PATH/
 
-  cp -f $STRATOS_SOURCE_PATH/products/stratos/modules/distribution/target/apache-stratos-*.zip $STRATOS_PACK_PATH/
-  cp -f $STRATOS_SOURCE_PATH/products/autoscaler/modules/distribution/target/apache-stratos-autoscaler-*.zip $STRATOS_PACK_PATH/
-  cp -f $STRATOS_SOURCE_PATH/extensions/cep/stratos-cep-extension/target/org.apache.stratos.cep.extension-*.jar $STRATOS_PACK_PATH
-
   if [ ! -e $STRATOS_PACK_PATH/$ACTIVEMQ_FILE ]
   then
      wget -q -P $STRATOS_PACK_PATH $ACTIVEMQ_URL/$ACTIVEMQ_FILE
@@ -279,29 +302,31 @@ function installer() {
      wget -q -P $STRATOS_PACK_PATH $HAWTBUF_URL/$HAWTBUF_FILE
   fi
 
-  sed -i "s:^export setup_path=.*:export setup_path=$STRATOS_SETUP_PATH:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
-  sed -i "s:^export stratos_packs=.*:export stratos_packs=$STRATOS_PACK_PATH:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
-  sed -i "s:^export stratos_path=.*:export stratos_path=$STRATOS_PATH:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
-  sed -i "s:^export mysql_connector_jar=.*:export mysql_connector_jar=$STRATOS_PACK_PATH/$MYSQLJ_FILE:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
-  sed -i "s:^export JAVA_HOME=.*:export JAVA_HOME=$JAVA_HOME:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
-  sed -i "s:^export log_path=.*:export log_path=/home/vagrant/stratos-log:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
-  sed -i "s:^export host_user=.*:export host_user=vagrant:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
-  sed -i "s:^export stratos_domain=.*:export stratos_domain=$DOMAINNAME:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
-  sed -i "s:^export machine_ip=.*:export machine_ip=\"127.0.0.1\":g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
-  sed -i "s:^export offset=.*:export offset=0:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
-  sed -i "s:^export mb_ip=.*:export mb_ip=$MB_IP_ADDR:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
-  sed -i "s:^export mb_port=.*:export mb_port=$MB_PORT:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
-  sed -i "s:^export puppet_ip=.*:export puppet_ip=$PUPPET_IP_ADDR:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
-  sed -i "s:^export puppet_hostname=.*:export puppet_hostname=$PUPPET_HOSTNAME:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
-  # set puppet_environment to a dummy value
-  sed -i "s:^export puppet_environment=.*:export puppet_environment=XXXXXXXXXXXXXXXXX:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
-  sed -i "s:^export cep_artifacts_path=.*:export cep_artifacts_path=$STRATOS_SOURCE_PATH/extensions/cep/artifacts/:g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  CFG_FILE=$STRATOS_SETUP_PATH/conf/setup.conf
 
-  sed -i "s:^export userstore_db_hostname=.*:export userstore_db_hostname=\"localhost\":g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
-  sed -i "s:^export userstore_db_schema=.*:export userstore_db_schema=\"userstore\":g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
-  sed -i "s:^export userstore_db_port=.*:export userstore_db_port=\"3306\":g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
-  sed -i "s:^export userstore_db_user=.*:export userstore_db_user=\"root\":g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
-  sed -i "s:^export userstore_db_pass=.*:export userstore_db_pass=\"password\":g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export setup_path=.*:export setup_path=$STRATOS_SETUP_PATH:g" $CFG_FILE
+  sed -i "s:^export stratos_packs=.*:export stratos_packs=$STRATOS_PACK_PATH:g" $CFG_FILE
+  sed -i "s:^export stratos_path=.*:export stratos_path=$STRATOS_PATH:g" $CFG_FILE
+  sed -i "s:^export mysql_connector_jar=.*:export mysql_connector_jar=$STRATOS_PACK_PATH/$MYSQLJ_FILE:g" $CFG_FILE
+  sed -i "s:^export JAVA_HOME=.*:export JAVA_HOME=$JAVA_HOME:g" $CFG_FILE
+  sed -i "s:^export log_path=.*:export log_path=/home/vagrant/stratos-log:g" $CFG_FILE
+  sed -i "s:^export host_user=.*:export host_user=vagrant:g" $CFG_FILE
+  sed -i "s:^export stratos_domain=.*:export stratos_domain=$DOMAINNAME:g" $CFG_FILE
+  sed -i "s:^export machine_ip=.*:export machine_ip=\"127.0.0.1\":g" $CFG_FILE
+  sed -i "s:^export offset=.*:export offset=0:g" $CFG_FILE
+  sed -i "s:^export mb_ip=.*:export mb_ip=$MB_IP_ADDR:g" $CFG_FILE
+  sed -i "s:^export mb_port=.*:export mb_port=$MB_PORT:g" $CFG_FILE
+  sed -i "s:^export puppet_ip=.*:export puppet_ip=$PUPPET_IP_ADDR:g" $CFG_FILE
+  sed -i "s:^export puppet_hostname=.*:export puppet_hostname=$PUPPET_HOSTNAME:g" $CFG_FILE
+  # set puppet_environment to a dummy value
+  sed -i "s:^export puppet_environment=.*:export puppet_environment=XXXXXXXXXXXXXXXXX:g" $CFG_FILE
+  sed -i "s:^export cep_artifacts_path=.*:export cep_artifacts_path=$STRATOS_SOURCE_PATH/extensions/cep/artifacts/:g" $CFG_FILE
+
+  sed -i "s:^export userstore_db_hostname=.*:export userstore_db_hostname=\"localhost\":g" $CFG_FILE
+  sed -i "s:^export userstore_db_schema=.*:export userstore_db_schema=\"userstore\":g" $CFG_FILE
+  sed -i "s:^export userstore_db_port=.*:export userstore_db_port=\"3306\":g" $CFG_FILE
+  sed -i "s:^export userstore_db_user=.*:export userstore_db_user=\"root\":g" $CFG_FILE
+  sed -i "s:^export userstore_db_pass=.*:export userstore_db_pass=\"password\":g" $CFG_FILE
 
   # pick up the users IaaS settings
   source /home/vagrant/iaas.conf
@@ -309,19 +334,19 @@ function installer() {
   # Not apply the changes to stratos-setup.conf for each of the IaaS
 
   #EC2
-  sed -i "s:^export ec2_provider_enabled=.*:export ec2_provider_enabled='$ec2_provider_enabled':g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
-  sed -i "s:^export ec2_identity=.*:export ec2_identity='$ec2_identity':g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
-  sed -i "s:^export ec2_credential=.*:export ec2_credential='$ec2_credential':g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
-  sed -i "s:^export ec2_keypair_name=.*:export ec2_keypair_name='$ec2_keypair_name':g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
-  sed -i "s:^export ec2_owner_id=.*:export ec2_owner_id='$ec2_owner_id':g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
-  sed -i "s:^export ec2_availability_zone=.*:export ec2_availability_zone='$ec2_availability_zone':g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
-  sed -i "s:^export ec2_security_groups=.*:export ec2_security_groups='$ec2_security_groups':g" $STRATOS_SETUP_PATH/conf/stratos-setup.conf
+  sed -i "s:^export ec2_provider_enabled=.*:export ec2_provider_enabled='$ec2_provider_enabled':g" $CFG_FILE
+  sed -i "s:^export ec2_identity=.*:export ec2_identity='$ec2_identity':g" $CFG_FILE
+  sed -i "s:^export ec2_credential=.*:export ec2_credential='$ec2_credential':g" $CFG_FILE
+  sed -i "s:^export ec2_keypair_name=.*:export ec2_keypair_name='$ec2_keypair_name':g" $CFG_FILE
+  sed -i "s:^export ec2_owner_id=.*:export ec2_owner_id='$ec2_owner_id':g" $CFG_FILE
+  sed -i "s:^export ec2_availability_zone=.*:export ec2_availability_zone='$ec2_availability_zone':g" $CFG_FILE
+  sed -i "s:^export ec2_security_groups=.*:export ec2_security_groups='$ec2_security_groups':g" $CFG_FILE
 
   cd $STRATOS_SETUP_PATH
   chmod +x *.sh
 
   [ -d $STRATOS_PATH ] || mkdir $STRATOS_PATH
-  echo '' | sudo ./stratos-setup.sh -u vagrant -p all -s
+  echo '' | sudo ./setup.sh -p "default" -s &
 
   popd
 }
