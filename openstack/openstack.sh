@@ -91,6 +91,8 @@ function initial_setup() {
 
    NOVA_DOCKER_CFG=/home/vagrant/devstack/lib/nova_plugins/hypervisor-docker
 
+   # Patch to user newer docker version
+
    grep -q '^DOCKER_PACKAGE_VERSION=' $NOVA_DOCKER_CFG
    if [ $? -eq 0 ]
    then
@@ -98,6 +100,14 @@ function initial_setup() {
    else
       sed -i -e s/^\(DOCKER_DIR=.*\)$/DOCKER_PACKAGE_VERSION=0.7.6\n\1/g $NOVA_DOCKER_CFG
    fi
+
+   # Patch devstack broken scripts
+
+   sed -i -e "s/lxc-docker;/lxc-docker-\$\{DOCKER_PACKAGE_VERSION\};/g" $NOVA_DOCKER_CFG
+   sed -i -e "s/lxc-docker=/lxc-docker-/g" /home/vagrant/devstack/tools/docker/install_docker.sh
+
+   # Use Damitha's scripts for the actuall install
+   # Source: http://damithakumarage.wordpress.com/2014/01/31/how-to-setup-openstack-havana-with-docker-driver/
 
    cp -f /vagrant/openstack/install_docker0.sh /home/vagrant/devstack/tools/docker/
    cp -f /vagrant/openstack/install_docker1.sh /home/vagrant/devstack/tools/docker/
@@ -179,6 +189,15 @@ EOF
 
    cd /home/vagrant/devstack
    ./stack.sh
+
+   echo "=============================================="
+   echo "Openstack installation finished.  Login using:"
+   echo ""
+   echo "URL http://192.168.92.30/"
+   echo "Username: admin or demo"
+   echo "Passsword: g"
+   echo "=============================================="
+ 
 
 }
 
