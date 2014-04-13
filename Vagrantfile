@@ -45,7 +45,7 @@ Vagrant.configure("2") do |config|
     # add another network for openstack
     # TODO: read IaaS.conf file to see if openstack is required, if so enable this
     # if (openstack)
-    config.vm.network :private_network, :auto_config => false , :ip => "192.168.92.30", :netmask => "255.255.255.0"
+    config.vm.network :private_network, :ip => "192.168.92.30", :netmask => "255.255.255.0"
     # end
 
     # make the stratos setup script available in the /home/vagrant folder
