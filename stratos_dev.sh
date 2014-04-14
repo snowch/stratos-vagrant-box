@@ -297,7 +297,9 @@ function installer() {
 
   if [ -d $STRATOS_PATH ]
   then
-    read -p "$STRATOS_PATH exist. Delete this folder and the stratos 'userstore' database [y/n]? " answer
+    echo "Found existing Stratos instllation folder: $STRATOS_PATH"
+    echo "Delete this folder and the Stratos 'userstore' database [y/n]? "
+    read answer
     if [[ $answer == y ]] ; then
         sudo rm -rf $STRATOS_PATH
         mysql -u root -p'password' -e 'drop database if exists userstore;' mysql
@@ -383,19 +385,31 @@ function installer() {
 
 function start_servers() {
 
-  $STRATOS_PATH/apache-activemq-5.8.0/bin/activemq restart
+  $STRATOS_PATH/apache-activemq-5.8.0/bin/activemq restart > /dev/null 2&>1
 
-  $STRATOS_PATH/apache-stratos/bin/stratos.sh --restart
+  $STRATOS_PATH/apache-stratos/bin/stratos.sh -Dprofile=default --restart > /dev/null 2&>1
+
+  echo "Servers starting."
+  echo "Check status using: ./$progname -t"
+  echo "Logs:"
+  echo "  ActiveMQ -> ./stratos/apache-activemq-5.8.0/data/activemq.log"
+  echo "  Stratos  -> ./stratos/apache-stratos/repository/logs/wso2carbon.log"
 }
 
 function kill_servers() {
 
   # ignore errors
   trap - ERR
-  
-  $STRATOS_PATH/apache-stratos/bin/stratos.sh --stop
 
-  $STRATOS_PATH/apache-activemq-5.8.0/bin/activemq stop
+  echo "Please wait - servers are shutting down." 
+  
+  $STRATOS_PATH/apache-stratos/bin/stratos.sh --stop > /dev/null 2&>1
+
+  $STRATOS_PATH/apache-activemq-5.8.0/bin/activemq stop > /dev/null 2&>1
+
+  echo "Servers stopped."
+  echo "  Check status using ./$progname -t"
+  echo "  Start again using ./$progname -s"
 }
 
 function servers_status() {
@@ -412,9 +426,13 @@ function servers_status() {
   if [ $? -eq 0 ]
   then
     echo "Stratos is running (pid '$stratos_pid')"
-    exit 0
+  else
+    echo "Stratos is not running"
   fi
-  echo "Stratos not running"
+
+  echo "Logs:"
+  echo "  ActiveMQ -> ./stratos/apache-activemq-5.8.0/data/activemq.log"
+  echo "  Stratos  -> ./stratos/apache-stratos/repository/logs/wso2carbon.log"
 }
 
 function development_environment() {
