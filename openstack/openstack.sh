@@ -190,8 +190,15 @@ EOF
    cd /home/vagrant/devstack
    ./stack.sh
 
-   echo "=============================================="
-   echo "Openstack installation finished.  Login using:"
+   # Patch docker driver, see
+   # http://damithakumarage.wordpress.com/2014/01/31/how-to-setup-openstack-havana-with-docker-driver/
+   sed -i -e 's/destroy_disks=True)/destroy_disks=True, context=None)/g' /opt/stack/nova/nova/virt/docker/driver.py
+
+   echo "==============================================="
+   echo "Openstack installation finished.  Restart using"
+   echo "'vagrant reload'"
+   echo ""
+   echo "Then login using:"
    echo ""
    echo "URL http://192.168.92.30/"
    echo "Username: admin or demo"
