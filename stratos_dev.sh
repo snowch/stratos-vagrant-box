@@ -385,12 +385,12 @@ function installer() {
 
 function start_servers() {
 
-  $STRATOS_PATH/apache-activemq-5.8.0/bin/activemq restart > /dev/null 2&>1
+  $STRATOS_PATH/apache-activemq-5.8.0/bin/activemq restart > /dev/null 2>&1
 
-  $STRATOS_PATH/apache-stratos/bin/stratos.sh -Dprofile=default --restart > /dev/null 2&>1
+  $STRATOS_PATH/apache-stratos/bin/stratos.sh -Dprofile=default --restart > /dev/null 2>&1
 
   echo "Servers starting."
-  echo "Check status using: ./$progname -t"
+  echo "Check status using: $progname -t"
   echo "Logs:"
   echo "  ActiveMQ -> ./stratos/apache-activemq-5.8.0/data/activemq.log"
   echo "  Stratos  -> ./stratos/apache-stratos/repository/logs/wso2carbon.log"
@@ -403,13 +403,13 @@ function kill_servers() {
 
   echo "Please wait - servers are shutting down." 
   
-  $STRATOS_PATH/apache-stratos/bin/stratos.sh --stop > /dev/null 2&>1
+  $STRATOS_PATH/apache-stratos/bin/stratos.sh --stop > /dev/null 2>&1
 
-  $STRATOS_PATH/apache-activemq-5.8.0/bin/activemq stop > /dev/null 2&>1
+  $STRATOS_PATH/apache-activemq-5.8.0/bin/activemq stop > /dev/null 2>&1
 
   echo "Servers stopped."
-  echo "  Check status using ./$progname -t"
-  echo "  Start again using ./$progname -s"
+  echo "  Check status using $progname -t"
+  echo "  Start again using $progname -s"
 }
 
 function servers_status() {
