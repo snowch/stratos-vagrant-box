@@ -16,17 +16,22 @@
 # specific language governing permissions and limitations
 # under the License.
 
-set -e
+# Don't allow uninitialised variables
+set -u
+
+# propagate ERR
+set -o errtrace
 
 # You should not need to change these variables
-STRATOS_VERSION="master"
+STRATOS_SRC_VERSION="master"
+STRATOS_VERSION="4.0.0-SNAPSHOT"
 STRATOS_PACK_PATH="/home/vagrant/stratos-packs"
 STRATOS_SETUP_PATH="/home/vagrant/stratos-installer"
 STRATOS_SOURCE_PATH="/home/vagrant/incubator-stratos"
 STRATOS_PATH="/home/vagrant/stratos"
 WSO2_CEP_URL="http://people.apache.org/~chsnow"
 WSO2_CEP_FILE="wso2cep-3.0.0.zip"
-ACTIVEMQ_URL="http://www.mirrorservice.org/sites/ftp.apache.org/activemq/apache-activemq/5.8.0"
+ACTIVEMQ_URL="http://archive.apache.org/dist//activemq/apache-activemq/5.8.0/"
 ACTIVEMQ_FILE="apache-activemq-5.8.0-bin.tar.gz"
 MYSQLJ_URL="http://repo1.maven.org/maven2/mysql/mysql-connector-java/5.1.29"
 MYSQLJ_FILE="mysql-connector-java-5.1.29.jar"
@@ -59,8 +64,13 @@ function finish {
    echo "\n\nReceived SIGINT. Exiting..."
    exit
 }
-
 trap finish SIGINT
+
+error() {
+  echo "Error running ${progname} around line $1"
+  exit 1
+}
+trap 'error ${LINENO}' ERR
 
 function main() {
   while getopts 'fcbpndskth' flag; do
@@ -152,18 +162,20 @@ function downloads () {
 
   if [ ! -e $STRATOS_PACK_PATH/$WSO2_CEP_FILE ]
   then
-     wget -q -P $STRATOS_PACK_PATH $WSO2_CEP_URL/$WSO2_CEP_FILE
+     echo "Downloading $WSO2_CEP_URL/$WSO2_CEP_FILE"
+     wget -nv -P $STRATOS_PACK_PATH $WSO2_CEP_URL/$WSO2_CEP_FILE
   fi
 
   if [ ! -e $STRATOS_PACK_PATH/$MYSQLJ_FILE ]
   then
-     wget -q -P $STRATOS_PACK_PATH $MYSQLJ_URL/$MYSQLJ_FILE
+     echo "Downloading $MYSQLJ_URL/$MYSQLJ_FILE"
+     wget -nv -P $STRATOS_PACK_PATH $MYSQLJ_URL/$MYSQLJ_FILE
   fi
 
-  if [ ! -e $STRATOS_PACK_PATH/$ANDES_CLIENT_JAR_FILE ]
-  then
-     wget -q -P $STRATOS_PACK_PATH $ANDES_CLIENT_JAR_URL/$ANDES_CLIENT_JAR_FILE
-  fi
+  #if [ ! -e $STRATOS_PACK_PATH/$ANDES_CLIENT_JAR_FILE ]
+  #then
+  #   wget -q -P $STRATOS_PACK_PATH $ANDES_CLIENT_JAR_URL/$ANDES_CLIENT_JAR_FILE
+  #fi
 }
 
 function fix_git_tls_bug() {
@@ -234,10 +246,10 @@ function puppet_setup() {
 
   [ -d /etc/puppet/modules/agent/files ] || sudo mkdir -p /etc/puppet/modules/agent/files
 
-  sudo cp -R $STRATOS_SOURCE_PATH/tools/puppet3/manifests/* /etc/puppet/manifests/
-  sudo cp $STRATOS_SOURCE_PATH/tools/puppet3/modules/* /etc/puppet/modules/
-  sudo cp $STRATOS_SOURCE_PATH/products/cartridge-agent/modules/distribution/target/apache-stratos-cartridge-agent-*-bin.zip /etc/puppet/modules/agent/files
-  sudo cp $STRATOS_SOURCE_PATH/products/load-balancer/modules/distribution/target/apache-stratos-load-balancer-*.zip /etc/puppet/modules/agent/files
+  sudo cp -rf $STRATOS_SOURCE_PATH/tools/puppet3/manifests/* /etc/puppet/manifests/
+  sudo cp -rf $STRATOS_SOURCE_PATH/tools/puppet3/modules/* /etc/puppet/modules/
+  sudo cp -f $STRATOS_SOURCE_PATH/products/cartridge-agent/modules/distribution/target/apache-stratos-cartridge-agent-*-bin.zip /etc/puppet/modules/agent/files
+  sudo cp -f $STRATOS_SOURCE_PATH/products/load-balancer/modules/distribution/target/apache-stratos-load-balancer-*.zip /etc/puppet/modules/agent/files
 
   sudo sh -c 'echo "*.$DOMAINNAME" > /etc/puppet/autosign.conf'
 
@@ -257,7 +269,9 @@ else
   JAVA_ARCH="i586"
 fi
 
-  sudo wget -q -c -P /etc/puppet/modules/java/files \
+  echo 'Downloading Oracle JDK'
+
+  sudo wget -nv -c -P /etc/puppet/modules/java/files \
             --no-cookies --no-check-certificate \
             --header "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie" \
             "http://download.oracle.com/otn-pub/java/jdk/7u51-b13/jdk-7u51-linux-${JAVA_ARCH}.tar.gz"
@@ -293,14 +307,14 @@ function installer() {
     fi
   fi
 
-  # tmux is useful for starting all the services in different windows
-  sudo apt-get install -y tmux
-
   cp -rpf $STRATOS_SOURCE_PATH/tools/stratos-installer/* $STRATOS_SETUP_PATH/
+
+  cp -f $STRATOS_SOURCE_PATH/products/stratos/modules/distribution/target/apache-stratos-${STRATOS_VERSION}.zip $STRATOS_PACK_PATH/
 
   if [ ! -e $STRATOS_PACK_PATH/$ACTIVEMQ_FILE ]
   then
-     wget -q -P $STRATOS_PACK_PATH $ACTIVEMQ_URL/$ACTIVEMQ_FILE
+     echo "Downloading $ACTIVEMQ_URL/$ACTIVEMQ_FILE"
+     wget -nv -P $STRATOS_PACK_PATH $ACTIVEMQ_URL/$ACTIVEMQ_FILE
   fi
 
   # TODO this section is fragile and will break if the version of activemq changes
@@ -314,7 +328,8 @@ function installer() {
 
   if [ ! -e $STRATOS_PACK_PATH/$HAWTBUF_FILE ]
   then
-     wget -q -P $STRATOS_PACK_PATH $HAWTBUF_URL/$HAWTBUF_FILE
+     echo "Downloading $HAWTBUF_URL/$HAWTBUF_FILE"
+     wget -nv -P $STRATOS_PACK_PATH $HAWTBUF_URL/$HAWTBUF_FILE
   fi
 
   CFG_FILE=$STRATOS_SETUP_PATH/conf/setup.conf
@@ -374,8 +389,10 @@ function start_servers() {
 }
 
 function kill_servers() {
+
+  # ignore errors
+  trap - ERR
   
-  set +e 
   $STRATOS_PATH/apache-stratos/bin/stratos.sh --stop
 
   $STRATOS_PATH/apache-activemq-5.8.0/bin/activemq stop
@@ -383,9 +400,11 @@ function kill_servers() {
 
 function servers_status() {
 
+  # ignore errors
+  trap - ERR
+
   $STRATOS_PATH/apache-activemq-5.8.0/bin/activemq status | tail -1
 
-  set +e 
   stratos_pid=$(cat $STRATOS_PATH/apache-stratos/wso2carbon.pid)
   java_pids=$(pgrep -u vagrant -f java)
 
@@ -412,7 +431,8 @@ function development_environment() {
    mvn eclipse:eclipse
 
    # import projects
-   sudo wget -c -P /usr/share/eclipse/dropins/ \
+   echo "Downloading eclipse import util"
+   sudo wget -nv -P /usr/share/eclipse/dropins/ \
       https://github.com/snowch/test.myapp/raw/master/test.myapp_1.0.0.jar
 
    # get all the directories that can be imported into eclipse and append them
@@ -430,7 +450,8 @@ function development_environment() {
    # Although it is possible to import multiple directories with one 
    # invocation of the test.myapp.App, this fails if one of the imports
    # was not successful.  Using a for loop is slower, but more robust
-   set +e
+   trap -e ERR
+
    for item in ${IMPORTS[*]};
    do
       IMPORT="$(dirname $item)/"
@@ -445,7 +466,9 @@ function development_environment() {
         IMPORT_ERRORS="${IMPORT_ERRORS}\n${IMPORT}"
       fi
    done
-   set -e
+
+   # turn error handling back on
+   trap 'error ${LINENO}' ERR
 
    if [ -z "$IMPORT_ERRORS" ]
    then
@@ -473,7 +496,7 @@ function checkout() {
   fi
 
   cd $STRATOS_SOURCE_PATH
-  git checkout ${STRATOS_VERSION}
+  git checkout ${STRATOS_SRC_VERSION}
 
   popd
 }
@@ -494,7 +517,7 @@ function force_clean () {
    echo -e "\e[32mIMPORTANT\e[39m"
    echo "Reset your environment?  This will lose any changes you have made."
    echo
-   read -p "Please close eclipse, stop any maven jobs and press [Enter] key to continue..."
+   read -p "Please close eclipse, stop any maven jobs and press [Enter] key to continue."
    
    cd /home/vagrant/incubator-stratos
    mvn clean
