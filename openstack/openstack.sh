@@ -194,7 +194,10 @@ EOF
    cd /home/vagrant/devstack
    ./stack.sh
 
+   set +u
    . ${DEVSTACK_HOME}/openrc
+   set -u
+
    nova secgroup-add-rule default tcp 22 22 0.0.0.0/0
    nova secgroup-add-rule default icmp -1 -1 0.0.0.0/0
 
