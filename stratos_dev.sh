@@ -16,6 +16,15 @@
 # specific language governing permissions and limitations
 # under the License.
 
+if [[ $(whoami) != 'vagrant' ]]; then
+  echo "This script is designed to be run as user 'vagrant.'"
+  echo "You can create a'vagrant' user account, as administrator:"
+  echo ""
+  echo "  useradd --create-home -s /bin/bash vagrant"
+  echo "  echo 'vagrant:vagrant' | chpasswd"
+  exit 1
+fi
+
 # Don't allow uninitialised variables
 set -u
 
@@ -54,6 +63,7 @@ fi
 
 grep -q '^export JAVA_HOME' ~/.profile || echo "export JAVA_HOME=$JAVA_HOME" >> ~/.profile
 . ~/.profile
+
 
 progname=$0
 progdir=$(dirname $progname)
