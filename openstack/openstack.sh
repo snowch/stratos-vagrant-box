@@ -234,9 +234,9 @@ EXPOSE 22
 ENTRYPOINT /usr/local/bin/run_scripts.sh | /usr/sbin/sshd -D
 EOF
 
-   cp /vagrant/openstack/metadata_svc_bugfix.sh $STRATOS_BASE/
-   cp /vagrant/openstack/file_edit_patch.sh $STRATOS_BASE/
-   cp /vagrant/openstack/run_scripts.sh $STRATOS_BASE/
+   cp -f /vagrant/openstack/metadata_svc_bugfix.sh $STRATOS_BASE/
+   cp -f /vagrant/openstack/file_edit_patch.sh $STRATOS_BASE/
+   cp -f /vagrant/openstack/run_scripts.sh $STRATOS_BASE/
 
    cd $STRATOS_BASE
    docker build -t stratosbase .
