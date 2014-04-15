@@ -49,7 +49,7 @@ Usage: $progname -[f|h]
 
 Where:
 
-    -f perform a complete setup of the stratos runtime environment
+    -f perform a complete setup of the openstack runtime environment
 
     -h show this help message
 
@@ -173,12 +173,14 @@ EOF
    set -e
 
    cat > /home/vagrant/devstack/localrc <<EOF
+HOST_IP=192.168.92.30
 FLOATING_RANGE=192.168.92.0/27
 FIXED_RANGE=10.11.12.0/24
 FIXED_NETWORK_SIZE=256
 FLAT_INTERFACE=eth2
 ADMIN_PASSWORD=g
-MYSQL_PASSWORD=g
+# stratos_dev.sh script uses 'password' for mysql
+MYSQL_PASSWORD=password
 RABBIT_PASSWORD=g
 SERVICE_PASSWORD=g
 SERVICE_TOKEN=g
