@@ -194,6 +194,10 @@ EOF
    cd /home/vagrant/devstack
    ./stack.sh
 
+   . ${DEVSTACK_HOME}/openrc
+   nova secgroup-add-rule default tcp 22 22 0.0.0.0/0
+   nova secgroup-add-rule default icmp -1 -1 0.0.0.0/0
+
    # Patch docker driver, see
    # http://damithakumarage.wordpress.com/2014/01/31/how-to-setup-openstack-havana-with-docker-driver/
    sed -i -e 's/destroy_disks=True)/destroy_disks=True, context=None)/g' /opt/stack/nova/nova/virt/docker/driver.py
