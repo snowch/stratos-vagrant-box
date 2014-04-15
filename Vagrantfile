@@ -27,8 +27,11 @@ Vagrant.configure("2") do |config|
     # stratos. ubuntu cloud images only have 10Gb which is not enough.
 
     # 64 bit machine
-    config.vm.box = "opscode-ubuntu-12.04-64"
-    config.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-12.04_chef-provisionerless.box"
+    # config.vm.box = "opscode-ubuntu-12.04-64"
+    # config.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-12.04_chef-provisionerless.box"
+
+    config.vm.box = "opscode-ubuntu-13.04-64"
+    config.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-13.04_chef-provisionerless.box"
 
     # 32 bit machine
     #config.vm.box = "opscode-ubuntu-12.04-32"
@@ -39,9 +42,16 @@ Vagrant.configure("2") do |config|
     # put stratos on the same private network as cloudstack so they can talk to each other
     config.vm.network :private_network, :ip => STRATOS_IP
 
+    # add another network for openstack
+    # TODO: read IaaS.conf file to see if openstack is required, if so enable this
+    # if (openstack)
+    config.vm.network :private_network, :ip => "192.168.92.30", :netmask => "255.255.255.0"
+    # end
+
     # make the stratos setup script available in the /home/vagrant folder
     config.vm.provision "shell", inline: "ln -sf /vagrant/stratos_dev.sh /home/vagrant/stratos_dev.sh", privileged: false
     config.vm.provision "shell", inline: "ln -sf /vagrant/iaas.conf /home/vagrant/iaas.conf", privileged: false
+    config.vm.provision "shell", inline: "ln -sf /vagrant/openstack/openstack.sh /home/vagrant/openstack.sh", privileged: false
 
     config.vm.provider "virtualbox" do |v|
       v.customize ["modifyvm", :id, "--memory", 2048]
