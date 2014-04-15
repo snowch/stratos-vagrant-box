@@ -16,12 +16,25 @@
 # specific language governing permissions and limitations
 # under the License.
 
+# IP Address for this host
+IP_ADDR="192.168.56.5"
+
+grep -q 'Ubuntu 13.04' /etc/issue
+if [[ $? != 0 ]]; then
+  echo "WARNING: This script has only been tested on Ubuntu 13.04"
+  read -p "Press [Enter] key to continue (CTRL-C to quit)..."  
+  clear
+fi
+
 if [[ $(whoami) != 'vagrant' ]]; then
   echo "This script is designed to be run as user 'vagrant.'"
+  echo ""
   echo "You can create a'vagrant' user account, as administrator:"
   echo ""
   echo "  useradd --create-home -s /bin/bash vagrant"
   echo "  echo 'vagrant:vagrant' | chpasswd"
+  echo "  echo 'vagrant ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/vagrant"
+  echo "  echo 'Defaults:vagrant secure_path=/sbin:/usr/sbin:/usr/bin:/bin:/usr/local/sbin:/usr/local/bin' >> /etc/sudoers.d/vagrant"
   exit 1
 fi
 
@@ -34,10 +47,10 @@ set -o errtrace
 # You should not need to change these variables
 STRATOS_SRC_VERSION="master"
 STRATOS_VERSION="4.0.0-SNAPSHOT"
-STRATOS_PACK_PATH="/home/vagrant/stratos-packs"
-STRATOS_SETUP_PATH="/home/vagrant/stratos-installer"
-STRATOS_SOURCE_PATH="/home/vagrant/incubator-stratos"
-STRATOS_PATH="/home/vagrant/stratos"
+STRATOS_PACK_PATH="${HOME}/stratos-packs"
+STRATOS_SETUP_PATH="${HOME}/stratos-installer"
+STRATOS_SOURCE_PATH="${HOME}/incubator-stratos"
+STRATOS_PATH="${HOME}/stratos"
 WSO2_CEP_URL="http://people.apache.org/~chsnow"
 WSO2_CEP_FILE="wso2cep-3.0.0.zip"
 ACTIVEMQ_URL="http://archive.apache.org/dist//activemq/apache-activemq/5.8.0/"
@@ -46,7 +59,6 @@ MYSQLJ_URL="http://repo1.maven.org/maven2/mysql/mysql-connector-java/5.1.29"
 MYSQLJ_FILE="mysql-connector-java-5.1.29.jar"
 HAWTBUF_URL="http://repo1.maven.org/maven2/org/fusesource/hawtbuf/hawtbuf/1.2"
 HAWTBUF_FILE="hawtbuf-1.2.jar"
-IP_ADDR="192.168.56.5"
 PUPPET_IP_ADDR="127.0.0.1"
 PUPPET_HOSTNAME="puppet.stratos.com"
 MB_IP_ADDR="127.0.0.1"
@@ -112,7 +124,7 @@ Where:
        IMPORTANT: 
        The first time you run this script must be with the command '-f'
 
-       You must also configure the iaas.conf file in the /home/vagrant
+       You must also configure the iaas.conf file in the ${HOME}
        folder with the details of your IaaS.  For more information on 
        EC2 configuration, see this thread: http://tinyurl.com/p48euoj
        ----------------------------------------------------------------
@@ -133,7 +145,7 @@ Where:
 
     -n Install Stratos (and startup Stratos).
        You will probably want to re-run this after you re-setup Puppet.
-       Use 'tail -f /home/vagrant/stratos-log/stratos-setup.log' to watch output.
+       Use 'tail -f ${HOME}/stratos-log/stratos-setup.log' to watch output.
 
        When you see the 'Servers Started' message, you should be able to connect
        with your browser to:
@@ -245,7 +257,7 @@ function puppet_setup() {
   echo -e "\e[32mSetting up puppet\e[39m"
 
   pushd $PWD
-  cd /home/vagrant
+  cd ${HOME}
 
   if [ ! -d puppetinstall ]
   then
@@ -264,7 +276,7 @@ function puppet_setup() {
   sudo sh -c 'echo "*.$DOMAINNAME" > /etc/puppet/autosign.conf'
 
   # TODO move hardcoded strings to variables
-  sudo sed -i -E "s:(\s*[$]local_package_dir.*=).*$:\1 \"/home/vagrant/packs\":g" /etc/puppet/manifests/nodes.pp
+  sudo sed -i -E "s:(\s*[$]local_package_dir.*=).*$:\1 \"$HOME/packs\":g" /etc/puppet/manifests/nodes.pp
   sudo sed -i -E "s:(\s*[$]mb_ip.*=).*$:\1 \"$IP_ADDR\":g" /etc/puppet/manifests/nodes.pp
   sudo sed -i -E "s:(\s*[$]mb_port.*=).*$:\1 \"$MB_PORT\":g" /etc/puppet/manifests/nodes.pp
   sudo sed -i -E "s:(\s*[$]cep_ip.*=).*$:\1 \"$IP_ADDR\":g" /etc/puppet/manifests/nodes.pp
@@ -353,7 +365,7 @@ function installer() {
   sed -i "s:^export stratos_path=.*:export stratos_path=$STRATOS_PATH:g" $CFG_FILE
   sed -i "s:^export mysql_connector_jar=.*:export mysql_connector_jar=$STRATOS_PACK_PATH/$MYSQLJ_FILE:g" $CFG_FILE
   sed -i "s:^export JAVA_HOME=.*:export JAVA_HOME=$JAVA_HOME:g" $CFG_FILE
-  sed -i "s:^export log_path=.*:export log_path=/home/vagrant/stratos-log:g" $CFG_FILE
+  sed -i "s:^export log_path=.*:export log_path=$HOME/stratos-log:g" $CFG_FILE
   sed -i "s:^export host_user=.*:export host_user=vagrant:g" $CFG_FILE
   sed -i "s:^export stratos_domain=.*:export stratos_domain=$DOMAINNAME:g" $CFG_FILE
   sed -i "s:^export machine_ip=.*:export machine_ip=\"127.0.0.1\":g" $CFG_FILE
@@ -373,7 +385,7 @@ function installer() {
   sed -i "s:^export userstore_db_pass=.*:export userstore_db_pass=\"password\":g" $CFG_FILE
 
   # pick up the users IaaS settings
-  source /home/vagrant/iaas.conf
+  source ${HOME}/iaas.conf
 
   # Not apply the changes to stratos-setup.conf for each of the IaaS
 
@@ -468,7 +480,7 @@ function development_environment() {
    # get all the directories that can be imported into eclipse and append them
    # with '-import'
 
-   if [ -e /home/vagrant/workspace ]
+   if [ -e ${HOME}/workspace ]
    then
       IMPORTS='' # importing fails if workspace already has imported projects 
    else
@@ -489,7 +501,7 @@ function development_environment() {
       # perform the import 
       eclipse -nosplash \
          -application test.myapp.App \
-         -data /home/vagrant/workspace \
+         -data ${HOME}/workspace \
          -import $IMPORT
       if [ $? != 0 ]
       then
@@ -506,7 +518,7 @@ function development_environment() {
       echo -e "\e[31m$IMPORT_ERRORS\e[39m"
    fi
 
-   mvn -Declipse.workspace=/home/vagrant/workspace/ eclipse:configure-workspace
+   mvn -Declipse.workspace=${HOME}/workspace/ eclipse:configure-workspace
    popd
 }
 
@@ -536,7 +548,7 @@ function maven_clean_install () {
    echo -e "\e[32mRunning 'mvn clean install'.\e[39m"
    
    pushd $PWD
-   cd /home/vagrant/incubator-stratos
+   cd ${HOME}/incubator-stratos
    mvn clean install -DskipTests
    popd
 }
@@ -549,12 +561,12 @@ function force_clean () {
    echo
    read -p "Please close eclipse, stop any maven jobs and press [Enter] key to continue."
    
-   cd /home/vagrant/incubator-stratos
+   cd ${HOME}/incubator-stratos
    mvn clean
    
-   rm -rf /home/vagrant/workspace-stratos
+   rm -rf ${HOME}/workspace-stratos
    
-   rm -rf /home/vagrant/.m2
+   rm -rf ${HOME}/.m2
    
    popd
 }
