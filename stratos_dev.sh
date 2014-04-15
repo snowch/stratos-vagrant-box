@@ -407,9 +407,9 @@ function installer() {
   # pick up the users IaaS settings
   source ${HOME}/iaas.conf
 
-  # Not apply the changes to stratos-setup.conf for each of the IaaS
+  # Now apply the changes to stratos-setup.conf for each of the IaaS
 
-  #EC2
+  # EC2
   sed -i "s:^export ec2_provider_enabled=.*:export ec2_provider_enabled='$ec2_provider_enabled':g" $CFG_FILE
   sed -i "s:^export ec2_identity=.*:export ec2_identity='$ec2_identity':g" $CFG_FILE
   sed -i "s:^export ec2_credential=.*:export ec2_credential='$ec2_credential':g" $CFG_FILE
@@ -417,6 +417,8 @@ function installer() {
   sed -i "s:^export ec2_owner_id=.*:export ec2_owner_id='$ec2_owner_id':g" $CFG_FILE
   sed -i "s:^export ec2_availability_zone=.*:export ec2_availability_zone='$ec2_availability_zone':g" $CFG_FILE
   sed -i "s:^export ec2_security_groups=.*:export ec2_security_groups='$ec2_security_groups':g" $CFG_FILE
+
+  # TODO openstack configuration
 
   cd $STRATOS_SETUP_PATH
   chmod +x *.sh
