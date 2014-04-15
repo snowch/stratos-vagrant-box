@@ -196,11 +196,6 @@ function downloads () {
      echo "Downloading $MYSQLJ_URL/$MYSQLJ_FILE"
      wget -nv -P $STRATOS_PACK_PATH $MYSQLJ_URL/$MYSQLJ_FILE
   fi
-
-  #if [ ! -e $STRATOS_PACK_PATH/$ANDES_CLIENT_JAR_FILE ]
-  #then
-  #   wget -q -P $STRATOS_PACK_PATH $ANDES_CLIENT_JAR_URL/$ANDES_CLIENT_JAR_FILE
-  #fi
 }
 
 function fix_git_tls_bug() {
