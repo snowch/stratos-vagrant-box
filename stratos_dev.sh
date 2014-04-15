@@ -273,7 +273,6 @@ function puppet_setup() {
 
   sudo sh -c 'echo "*.$DOMAINNAME" > /etc/puppet/autosign.conf'
 
-  # TODO move hardcoded strings to variables
   sudo sed -i -E "s:(\s*[$]local_package_dir.*=).*$:\1 \"$HOME/packs\":g" /etc/puppet/manifests/nodes.pp
   sudo sed -i -E "s:(\s*[$]mb_ip.*=).*$:\1 \"$IP_ADDR\":g" /etc/puppet/manifests/nodes.pp
   sudo sed -i -E "s:(\s*[$]mb_port.*=).*$:\1 \"$MB_PORT\":g" /etc/puppet/manifests/nodes.pp
@@ -341,7 +340,6 @@ function installer() {
      wget -nv -P $STRATOS_PACK_PATH $ACTIVEMQ_URL/$ACTIVEMQ_FILE
   fi
 
-  # TODO this section is fragile and will break if the version of activemq changes
   [ -e tmp-activemq ] || mkdir tmp-activemq
   tar -C tmp-activemq -xzf $STRATOS_PACK_PATH/$ACTIVEMQ_FILE 
   cp -f tmp-activemq/apache-activemq-5.8.0/lib/activemq-broker-5.8.0.jar $STRATOS_PACK_PATH/
