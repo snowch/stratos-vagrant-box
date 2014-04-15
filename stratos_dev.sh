@@ -19,6 +19,30 @@
 # IP Address for this host
 IP_ADDR="192.168.56.5"
 
+# checkout this version
+STRATOS_SRC_VERSION="master"
+STRATOS_VERSION="4.0.0-SNAPSHOT"
+STRATOS_PACK_PATH="${HOME}/stratos-packs"
+STRATOS_SETUP_PATH="${HOME}/stratos-installer"
+STRATOS_SOURCE_PATH="${HOME}/incubator-stratos"
+STRATOS_PATH="${HOME}/stratos"
+WSO2_CEP_URL="http://people.apache.org/~chsnow"
+WSO2_CEP_FILE="wso2cep-3.0.0.zip"
+ACTIVEMQ_URL="http://archive.apache.org/dist//activemq/apache-activemq/5.8.0/"
+ACTIVEMQ_FILE="apache-activemq-5.8.0-bin.tar.gz"
+MYSQLJ_URL="http://repo1.maven.org/maven2/mysql/mysql-connector-java/5.1.29"
+MYSQLJ_FILE="mysql-connector-java-5.1.29.jar"
+HAWTBUF_URL="http://repo1.maven.org/maven2/org/fusesource/hawtbuf/hawtbuf/1.2"
+HAWTBUF_FILE="hawtbuf-1.2.jar"
+PUPPET_IP_ADDR="127.0.0.1"
+PUPPET_HOSTNAME="puppet.stratos.com"
+MB_IP_ADDR="127.0.0.1"
+MB_PORT=61616
+CEP_PORT=7611
+DOMAINNAME="stratos.com"
+
+# You should not need to change anything below
+
 grep -q 'Ubuntu 13.04' /etc/issue
 if [[ $? != 0 ]]; then
   echo "WARNING: This script has only been tested on Ubuntu 13.04"
@@ -44,27 +68,6 @@ set -u
 # propagate ERR
 set -o errtrace
 
-# You should not need to change these variables
-STRATOS_SRC_VERSION="master"
-STRATOS_VERSION="4.0.0-SNAPSHOT"
-STRATOS_PACK_PATH="${HOME}/stratos-packs"
-STRATOS_SETUP_PATH="${HOME}/stratos-installer"
-STRATOS_SOURCE_PATH="${HOME}/incubator-stratos"
-STRATOS_PATH="${HOME}/stratos"
-WSO2_CEP_URL="http://people.apache.org/~chsnow"
-WSO2_CEP_FILE="wso2cep-3.0.0.zip"
-ACTIVEMQ_URL="http://archive.apache.org/dist//activemq/apache-activemq/5.8.0/"
-ACTIVEMQ_FILE="apache-activemq-5.8.0-bin.tar.gz"
-MYSQLJ_URL="http://repo1.maven.org/maven2/mysql/mysql-connector-java/5.1.29"
-MYSQLJ_FILE="mysql-connector-java-5.1.29.jar"
-HAWTBUF_URL="http://repo1.maven.org/maven2/org/fusesource/hawtbuf/hawtbuf/1.2"
-HAWTBUF_FILE="hawtbuf-1.2.jar"
-PUPPET_IP_ADDR="127.0.0.1"
-PUPPET_HOSTNAME="puppet.stratos.com"
-MB_IP_ADDR="127.0.0.1"
-MB_PORT=61616
-CEP_PORT=7611
-DOMAINNAME="stratos.com"
 
 if [ "$(arch)" == "x86_64" ]
 then
