@@ -37,7 +37,11 @@ CEP_PORT=7611
 
 # checkout this version
 STRATOS_SRC_VERSION="master"
+
+# Version of stratos that gets built
 STRATOS_VERSION="4.0.0-SNAPSHOT"
+
+# Stratos folders
 STRATOS_PACK_PATH="${HOME}/stratos-packs"
 STRATOS_SETUP_PATH="${HOME}/stratos-installer"
 STRATOS_SOURCE_PATH="${HOME}/incubator-stratos"
@@ -59,7 +63,9 @@ MYSQLJ_FILE="mysql-connector-java-5.1.29.jar"
 HAWTBUF_URL="http://repo1.maven.org/maven2/org/fusesource/hawtbuf/hawtbuf/1.2"
 HAWTBUF_FILE="hawtbuf-1.2.jar"
 
-# You should not need to change anything below
+########################################################
+# You should not need to change anything below this line
+########################################################
 
 grep -q 'Ubuntu 13.04' /etc/issue
 if [[ $? != 0 ]]; then
