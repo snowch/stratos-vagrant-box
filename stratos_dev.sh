@@ -514,7 +514,7 @@ function development_environment() {
    # Although it is possible to import multiple directories with one 
    # invocation of the test.myapp.App, this fails if one of the imports
    # was not successful.  Using a for loop is slower, but more robust
-   trap -e ERR
+   trap - ERR
 
    for item in ${IMPORTS[*]};
    do
