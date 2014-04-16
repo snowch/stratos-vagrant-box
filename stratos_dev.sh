@@ -83,7 +83,7 @@ if [[ $(whoami) != 'vagrant' ]]; then
   echo "  echo 'vagrant:vagrant' | chpasswd"
   echo "  echo 'vagrant ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/vagrant"
   echo "  echo 'Defaults:vagrant secure_path=/sbin:/usr/sbin:/usr/bin:/bin:/usr/local/sbin:/usr/local/bin' >> /etc/sudoers.d/vagrant"
-  exit 1
+  # exit 1
 fi
 
 # Don't allow uninitialised variables
