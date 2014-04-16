@@ -1,7 +1,7 @@
 Stratos Runtime and Development Environments 
 ============================================
 
-[![Build Status](https://travis-ci.org/snowch/devcloud-script.png?branch=master)](https://travis-ci.org/snowch/devcloud-script)
+stratos_dev.sh setup script: [![Build Status](https://travis-ci.org/snowch/devcloud-script.png?branch=master)](https://travis-ci.org/snowch/devcloud-script)
 
 
 ## Stratos Runtime Environment
