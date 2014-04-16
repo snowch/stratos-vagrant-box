@@ -56,6 +56,10 @@ Vagrant.configure("2") do |config|
 
     config.vm.provider "virtualbox" do |v|
       v.customize ["modifyvm", :id, "--memory", 2048]
+
+      # uncomment these to use the virtualbox gui:
+      # v.gui = true
+      # v.customize ["modifyvm", :id, "--clipboard", "bidirectional"]
     end
 
 end
