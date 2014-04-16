@@ -52,7 +52,7 @@ Vagrant.configure("2") do |config|
     config.vm.provision "shell", inline: "ln -sf /vagrant/stratos_dev.sh /home/vagrant/stratos_dev.sh", privileged: false
     config.vm.provision "shell", inline: "ln -sf /vagrant/iaas.conf /home/vagrant/iaas.conf", privileged: false
     config.vm.provision "shell", inline: "ln -sf /vagrant/openstack-docker/openstack-docker.sh /home/vagrant/openstack-docker.sh", privileged: false
-
+    config.vm.provision "shell", inline: "ln -sf /vagrant/openstack-qemu/openstack-qemu.sh /home/vagrant/openstack-qemu.sh", privileged: false
 
     config.vm.provider "virtualbox" do |v|
       v.customize ["modifyvm", :id, "--memory", 2048]
