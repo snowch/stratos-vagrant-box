@@ -87,7 +87,7 @@ if [[ $(whoami) != 'vagrant' ]]; then
 fi
 
 # Don't allow uninitialised variables
-set -u
+# set -u
 
 # propagate ERR
 set -o errtrace
