@@ -3,5 +3,7 @@ before_script:
  - sudo sh -c 'echo "vagrant:vagrant" | chpasswd'
  - sudo sh -c 'echo "vagrant ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/vagrant'
  - sudo sh -c 'echo "Defaults:vagrant secure_path=/sbin:/usr/sbin:/usr/bin:/bin:/usr/local/sbin:/usr/local/bin" >> /etc/sudoers.d/vagrant'
-script: 
- - sudo -iE -u vagrant sh -c 'echo "" | ./stratos_dev.sh -f'
+script:
+ - echo $PWD
+ - ls -l ./scripts/ci/
+ - sudo -iE -u vagrant sh -c 'echo "" | ./script/ci/stratos_dev.sh -f'
