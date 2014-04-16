@@ -1,8 +1,9 @@
 before_script: 
- - sudo useradd --create-home -s /bin/bash vagrant
- - sudo sh -c 'echo "vagrant:vagrant" | chpasswd'
- - sudo sh -c 'echo "vagrant ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/vagrant'
- - sudo sh -c 'echo "Defaults:vagrant secure_path=/sbin:/usr/sbin:/usr/bin:/bin:/usr/local/sbin:/usr/local/bin" >> /etc/sudoers.d/vagrant'
- - sudo chown 0440 /etc/sudoers.d/vagrant
+ - sudo ls /home/
+ - sudo useradd --create-home -s /bin/bash stratos
+ - sudo sh -c 'echo "stratos:stratos" | chpasswd'
+ - sudo sh -c 'echo "stratos ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/stratos'
+ - sudo sh -c 'echo "Defaults:stratos secure_path=/sbin:/usr/sbin:/usr/bin:/bin:/usr/local/sbin:/usr/local/bin" >> /etc/sudoers.d/stratos'
+ - sudo chown 0440 /etc/sudoers.d/stratos
 script:
- - sudo -iE -u vagrant sh -c 'echo "" | bash -x /home/travis/build/snowch/devcloud-script/stratos_dev.sh -f'
+ - sudo -iE -u stratos sh -c 'echo "" | bash -x /home/travis/build/snowch/devcloud-script/stratos_dev.sh -f'
