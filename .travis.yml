@@ -1,6 +1,6 @@
 before_script: 
  - "sudo useradd --create-home -s /bin/bash vagrant"
- - "echo 'vagrant:vagrant' | chpasswd"
- - "echo 'vagrant ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/vagrant"
- - "echo 'Defaults:vagrant secure_path=/sbin:/usr/sbin:/usr/bin:/bin:/usr/local/sbin:/usr/local/bin' >> /etc/sudoers.d/vagrant"
+ - "sudo sh -c 'echo vagrant:vagrant | chpasswd'"
+ - "sudo sh -c 'echo vagrant ALL=(ALL) NOPASSWD:ALL > /etc/sudoers.d/vagrant"
+ - "sudo sh -c 'echo Defaults:vagrant secure_path=/sbin:/usr/sbin:/usr/bin:/bin:/usr/local/sbin:/usr/local/bin >> /etc/sudoers.d/vagrant"
 script: "./stratos_dev.sh -f"
