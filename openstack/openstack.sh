@@ -93,7 +93,7 @@ function initial_setup() {
    cd devstack
    git checkout stable/havana
 
-   NOVA_DOCKER_CFG=/home/vagrant/devstack/lib/nova_plugins/hypervisor-docker
+   NOVA_DOCKER_CFG=${HOME}/devstack/lib/nova_plugins/hypervisor-docker
 
    # Patch to user newer docker version
 
@@ -108,13 +108,16 @@ function initial_setup() {
    # Patch devstack broken scripts
 
    sed -i -e "s/lxc-docker;/lxc-docker-\$\{DOCKER_PACKAGE_VERSION\};/g" $NOVA_DOCKER_CFG
-   sed -i -e "s/lxc-docker=/lxc-docker-/g" /home/vagrant/devstack/tools/docker/install_docker.sh
+   sed -i -e "s/lxc-docker=/lxc-docker-/g" ${HOME}/devstack/tools/docker/install_docker.sh
 
    # Use Damitha's scripts for the actuall install
    # Source: http://damithakumarage.wordpress.com/2014/01/31/how-to-setup-openstack-havana-with-docker-driver/
 
-   cp -f /vagrant/openstack/install_docker0.sh /home/vagrant/devstack/tools/docker/
-   cp -f /vagrant/openstack/install_docker1.sh /home/vagrant/devstack/tools/docker/
+   cp -f /vagrant/openstack/install_docker0.sh ${HOME}/devstack/tools/docker/
+   cp -f /vagrant/openstack/install_docker1.sh ${HOME}/devstack/tools/docker/
+
+   chmod +x ${HOME}/devstack/tools/docker/install_docker0.sh
+   chmod +x ${HOME}/devstack/tools/docker/install_docker1.sh
 
    # docker scripts need curl 
    sudo apt-get install -y curl
@@ -174,7 +177,7 @@ EOF
    fi
    set -e
 
-   cat > /home/vagrant/devstack/localrc <<'EOF'
+   cat > ${HOME}/devstack/localrc <<'EOF'
 HOST_IP=192.168.92.30
 FLOATING_RANGE=192.168.92.0/27
 FIXED_RANGE=10.11.12.0/24
@@ -189,9 +192,10 @@ SERVICE_TOKEN=g
 SCHEDULER=nova.scheduler.filter_scheduler.FilterScheduler
 VIRT_DRIVER=docker
 SCREEN_LOGDIR=$DEST/logs/screen
+#OFFLINE=True
 EOF
 
-   cd /home/vagrant/devstack
+   cd ${HOME}/devstack
    ./stack.sh
 
    set +u
@@ -211,32 +215,7 @@ EOF
 
    [ -d $STRATOS_BASE ] || mkdir $STRATOS_BASE
 
-   cat > $STRATOS_BASE/Dockerfile <<EOF
-# stratosbase
-# VERSION 0.0.1
-FROM ubuntu64base
-MAINTAINER Damitha Kumarage "damitha23@gmail.com"
-RUN echo "deb http://archive.ubuntu.com/ubuntu precise main universe" > /etc/apt/sources.list
-RUN apt-get update
-
-RUN apt-get install -y openssh-server
-RUN echo 'root:g' |chpasswd
-
-RUN apt-get install -q -y zip
-RUN apt-get install -q -y unzip
-RUN apt-get install -q -y curl
-
-ADD metadata_svc_bugfix.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/metadata_svc_bugfix.sh
-ADD file_edit_patch.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/file_edit_patch.sh
-ADD run_scripts.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/run_scripts.sh
-ENV LD_LIBRARY_PATH /root/lib
-EXPOSE 22
-ENTRYPOINT /usr/local/bin/run_scripts.sh | /usr/sbin/sshd -D
-EOF
-
+   cp -f /vagrant/openstack/Dockerfile $STRATOS_BASE/
    cp -f /vagrant/openstack/metadata_svc_bugfix.sh $STRATOS_BASE/
    cp -f /vagrant/openstack/file_edit_patch.sh $STRATOS_BASE/
    cp -f /vagrant/openstack/run_scripts.sh $STRATOS_BASE/
