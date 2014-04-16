@@ -492,7 +492,7 @@ function development_environment() {
    echo lxsession > ~/.xsession
 
    cd $STRATOS_SOURCE_PATH
-   mvn eclipse:eclipse
+   mvn -q eclipse:eclipse
 
    # import projects
    echo "Downloading eclipse import util"
@@ -571,7 +571,7 @@ function maven_clean_install () {
    
    pushd $PWD
    cd ${HOME}/incubator-stratos
-   mvn clean install -DskipTests
+   mvn -q clean install -DskipTests
    popd
 }
 
