@@ -71,23 +71,22 @@ HAWTBUF_FILE="hawtbuf-1.2.jar"
 # You should not need to change anything below this line
 ########################################################
 
-grep -q 'Ubuntu 13.04' /etc/issue
-if [[ $? != 0 ]]; then
+if grep -qv 'Ubuntu 13.04' /etc/issue; then
   echo "WARNING: This script has only been tested on Ubuntu 13.04"
   read -p "Press [Enter] key to continue (CTRL-C to quit)..."  
   clear
 fi
 
-if [[ $(whoami) != 'vagrant' ]]; then
-  echo "This script is designed to be run as user 'vagrant.'"
+if [[ $(whoami) != 'vagrant' ]] || [[ $(whoami) != 'stratos' ]] ; then
+  echo "This script is designed to be run as user 'vagrant' or 'stratos'."
   echo ""
-  echo "You can create a'vagrant' user account, as administrator:"
+  echo "You can create a user account, as administrator:"
   echo ""
   echo "  useradd --create-home -s /bin/bash vagrant"
   echo "  echo 'vagrant:vagrant' | chpasswd"
   echo "  echo 'vagrant ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/vagrant"
   echo "  echo 'Defaults:vagrant secure_path=/sbin:/usr/sbin:/usr/bin:/bin:/usr/local/sbin:/usr/local/bin' >> /etc/sudoers.d/vagrant"
-  # exit 1
+  exit 1
 fi
 
 # Don't allow uninitialised variables
@@ -185,7 +184,8 @@ Where:
        Username: admin
        Password: admin
 
-    -d Setup a development environment with lubuntu desktop and eclipse.  
+    -d Setup a development environment with lubuntu desktop and eclipse.
+       This Command is only intented to be run on a vagrant environment.
 
        You can connect using rdesktop or Windows Remote Desktop Client.  
        Hostname: $IP_ADDR
@@ -390,7 +390,7 @@ function installer() {
   sed -i "s:^export mysql_connector_jar=.*:export mysql_connector_jar=$STRATOS_PACK_PATH/$MYSQLJ_FILE:g" $CFG_FILE
   sed -i "s:^export JAVA_HOME=.*:export JAVA_HOME=$JAVA_HOME:g" $CFG_FILE
   sed -i "s:^export log_path=.*:export log_path=$HOME/stratos-log:g" $CFG_FILE
-  sed -i "s:^export host_user=.*:export host_user=vagrant:g" $CFG_FILE
+  sed -i "s:^export host_user=.*:export host_user=$(whoami):g" $CFG_FILE
   sed -i "s:^export stratos_domain=.*:export stratos_domain=$DOMAINNAME:g" $CFG_FILE
   sed -i "s:^export machine_ip=.*:export machine_ip=\"127.0.0.1\":g" $CFG_FILE
   sed -i "s:^export offset=.*:export offset=0:g" $CFG_FILE
@@ -474,7 +474,7 @@ function servers_status() {
   $STRATOS_PATH/apache-activemq-5.8.0/bin/activemq status | tail -1
 
   stratos_pid=$(cat $STRATOS_PATH/apache-stratos/wso2carbon.pid)
-  java_pids=$(pgrep -u vagrant -f java)
+  java_pids=$(pgrep -u $(whoami) -f java)
 
   echo $java_pids | grep -q "$stratos_pid"
   if [ $? -eq 0 ]
