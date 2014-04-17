@@ -55,9 +55,9 @@ STRATOS_PATH="${HOME}/stratos"
 WSO2_CEP_URL="http://people.apache.org/~chsnow"
 WSO2_CEP_FILE="wso2cep-3.0.0.zip"
 
-# ActiveMQ 5.8.0 location.  Note: only 5.8.0 is supported by this script
-ACTIVEMQ_URL="http://archive.apache.org/dist//activemq/apache-activemq/5.8.0/"
-ACTIVEMQ_FILE="apache-activemq-5.8.0-bin.tar.gz"
+# ActiveMQ 5.9.1 location.  Note: only 5.8.0 is supported by this script
+ACTIVEMQ_URL="http://archive.apache.org/dist//activemq/5.9.1/"
+ACTIVEMQ_FILE="apache-activemq-5.9.1-bin.tar.gz"
 
 # MySQL download location.
 MYSQLJ_URL="http://repo1.maven.org/maven2/mysql/mysql-connector-java/5.1.29"
@@ -370,10 +370,10 @@ function installer() {
 
   [ -e tmp-activemq ] || mkdir tmp-activemq
   tar -C tmp-activemq -xzf $STRATOS_PACK_PATH/$ACTIVEMQ_FILE 
-  cp -f tmp-activemq/apache-activemq-5.8.0/lib/activemq-broker-5.8.0.jar $STRATOS_PACK_PATH/
-  cp -f tmp-activemq/apache-activemq-5.8.0/lib/activemq-client-5.8.0.jar $STRATOS_PACK_PATH/
-  cp -f tmp-activemq/apache-activemq-5.8.0/lib/geronimo-j2ee-management_1.1_spec-1.0.1.jar $STRATOS_PACK_PATH/
-  cp -f tmp-activemq/apache-activemq-5.8.0/lib/geronimo-jms_1.1_spec-1.1.1.jar $STRATOS_PACK_PATH/
+  cp -f tmp-activemq/apache-activemq-5.9.1/lib/activemq-broker-5.9.1.jar $STRATOS_PACK_PATH/
+  cp -f tmp-activemq/apache-activemq-5.9.1/lib/activemq-client-5.9.1.jar $STRATOS_PACK_PATH/
+  cp -f tmp-activemq/apache-activemq-5.9.1/lib/geronimo-j2ee-management_1.1_spec-1.0.1.jar $STRATOS_PACK_PATH/
+  cp -f tmp-activemq/apache-activemq-5.9.1/lib/geronimo-jms_1.1_spec-1.1.1.jar $STRATOS_PACK_PATH/
   rm -rf tmp-activemq
 
   if [ ! -e $STRATOS_PACK_PATH/$HAWTBUF_FILE ]
@@ -408,8 +408,12 @@ function installer() {
   sed -i "s:^export userstore_db_user=.*:export userstore_db_user=\"root\":g" $CFG_FILE
   sed -i "s:^export userstore_db_pass=.*:export userstore_db_pass=\"password\":g" $CFG_FILE
 
-  # pick up the users IaaS settings
-  source ${HOME}/iaas.conf
+  # pick up the user's IaaS settings
+  if [[ $TRAVIS -eq "true" ]]; then
+    source /home/travis/build/snowch/devcloud-script/iaas.conf
+  else
+    source ${HOME}/iaas.conf
+  fi
 
   # Now apply the changes to stratos-setup.conf for each of the IaaS
 
