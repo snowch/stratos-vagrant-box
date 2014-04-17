@@ -10,4 +10,5 @@ before_script:
  - sudo -iE -u stratos sh -c 'bash -x /home/travis/build/snowch/devcloud-script/stratos_dev.sh -p'
 script:
  - sudo -iE -u stratos sh -c 'bash -x /home/travis/build/snowch/devcloud-script/stratos_dev.sh -n'
+ - sudo -iE -u stratos sh -c 'sleep 60s'
  - sudo -iE -u stratos sh -c 'bash /home/travis/build/snowch/devcloud-script/stratos_dev.sh -t'
