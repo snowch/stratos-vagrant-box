@@ -125,10 +125,11 @@ error() {
 trap 'error ${LINENO}' ERR
 
 function main() {
-  while getopts 'fcbpndskth' flag; do
+  while getopts 'fwcbpndskth' flag; do
     progarg=${flag}
     case "${flag}" in
       f) initial_setup ; exit $? ;;
+      w) downloads; exit $? ;;
       c) checkout; exit $? ;;
       b) maven_clean_install; exit $? ;;
       p) puppet_setup; exit $? ;;
@@ -147,7 +148,7 @@ function main() {
 
 function usage () {
    cat <<EOF
-Usage: $progname -[f|c|b|p|n|d|h]
+Usage: $progname -[f|w|c|b|p|n|d|h]
 
 Where:
        ----------------------------------------------------------------
@@ -163,6 +164,8 @@ Where:
 
        This command is the same as running:
        $progname -c && $progname -b && $progname -p && $progname -n
+
+    -w Download pre-requisite files such as WSO2 CEP and MYSQLJ
 
     -c Checkout Stratos 'master' code.  
        Each time you run this command, this script will do a 'git pull'
