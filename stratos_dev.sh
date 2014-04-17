@@ -441,13 +441,13 @@ function start_servers() {
 
   $STRATOS_PATH/apache-activemq-5.9.1/bin/activemq restart > /dev/null 2>&1
 
-  $STRATOS_PATH/apache-stratos/bin/stratos.sh -Dprofile=default --restart > /dev/null 2>&1
+  $STRATOS_PATH/apache-stratos-default/bin/stratos.sh -Dprofile=default --restart > /dev/null 2>&1
 
   echo "Servers starting."
   echo "Check status using: $progname -t"
   echo "Logs:"
   echo "  ActiveMQ -> ./stratos/apache-activemq-5.9.1/data/activemq.log"
-  echo "  Stratos  -> ./stratos/apache-stratos/repository/logs/wso2carbon.log"
+  echo "  Stratos  -> ./stratos/apache-stratos-default/repository/logs/wso2carbon.log"
 }
 
 function kill_servers() {
@@ -457,7 +457,7 @@ function kill_servers() {
 
   echo "Please wait - servers are shutting down." 
   
-  $STRATOS_PATH/apache-stratos/bin/stratos.sh --stop > /dev/null 2>&1
+  $STRATOS_PATH/apache-stratos-default/bin/stratos.sh --stop > /dev/null 2>&1
 
   $STRATOS_PATH/apache-activemq-5.9.1/bin/activemq stop > /dev/null 2>&1
 
@@ -473,7 +473,7 @@ function servers_status() {
 
   $STRATOS_PATH/apache-activemq-5.9.1/bin/activemq status | tail -1
 
-  stratos_pid=$(cat $STRATOS_PATH/apache-stratos/wso2carbon.pid)
+  stratos_pid=$(cat $STRATOS_PATH/apache-stratos-default/wso2carbon.pid)
   java_pids=$(pgrep -u $(whoami) -f java)
 
   echo $java_pids | grep -q "$stratos_pid"
@@ -486,7 +486,7 @@ function servers_status() {
 
   echo "Logs:"
   echo "  ActiveMQ -> ./stratos/apache-activemq-5.9.1/data/activemq.log"
-  echo "  Stratos  -> ./stratos/apache-stratos/repository/logs/wso2carbon.log"
+  echo "  Stratos  -> ./stratos/apache-stratos-default/repository/logs/wso2carbon.log"
 }
 
 function development_environment() {
