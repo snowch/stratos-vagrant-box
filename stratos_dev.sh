@@ -17,7 +17,7 @@
 # under the License.
 
 # IP Address for this host
-if [[ $TRAVIS -eq "true" ]]; then
+if [[ $TRAVIS == "true" ]]; then
   IP_ADDR="127.0.0.1"
 else
   IP_ADDR="192.168.56.5"
@@ -409,7 +409,7 @@ function installer() {
   sed -i "s:^export userstore_db_pass=.*:export userstore_db_pass=\"password\":g" $CFG_FILE
 
   # pick up the user's IaaS settings
-  if [[ $TRAVIS -eq "true" ]]; then
+  if [[ $TRAVIS == "true" ]]; then
     source /home/travis/build/snowch/devcloud-script/iaas.conf
   else
     source ${HOME}/iaas.conf
@@ -580,7 +580,7 @@ function maven_clean_install () {
    pushd $PWD
    cd ${HOME}/incubator-stratos
    
-   if [[ $TRAVIS -eq "true" ]]; then
+   if [[ $TRAVIS == "true" ]]; then
      # hack to get travis CI build from failing
      # we need maven to be quiet, but still output something
      # or travis thinks the build has failed
