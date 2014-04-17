@@ -163,7 +163,7 @@ Where:
     -f perform a complete setup of the stratos runtime environment
 
        This command is the same as running:
-       $progname -c && $progname -b && $progname -p && $progname -n
+       $progname -w && $progname -c && $progname -b && $progname -p && $progname -n
 
     -w Download pre-requisite files such as WSO2 CEP and MYSQLJ
 
