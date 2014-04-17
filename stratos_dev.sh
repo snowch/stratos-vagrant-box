@@ -71,8 +71,8 @@ HAWTBUF_FILE="hawtbuf-1.2.jar"
 # You should not need to change anything below this line
 ########################################################
 
-if grep -qv 'Ubuntu 13.04' /etc/issue; then
-  echo "WARNING: This script has only been tested on Ubuntu 13.04"
+if egrep -qv "Ubuntu (12.04|13.04)" /etc/issue; then
+  echo "WARNING: This script has only been tested on Ubuntu 12.04 and 13.04"
   read -p "Press [Enter] key to continue (CTRL-C to quit)..."  
   clear
 fi
