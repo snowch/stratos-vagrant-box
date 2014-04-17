@@ -571,7 +571,19 @@ function maven_clean_install () {
    
    pushd $PWD
    cd ${HOME}/incubator-stratos
-   mvn -q clean install -DskipTests
+   
+   # hack to get travis CI build from failing
+   # we need maven to be quiet, but still output something
+   # or travis thinks the build has failed
+   
+   mvn -q clean install -DskipTests &
+   PID1=$!
+   
+   bash -c "while true; do echo $(date) ' - building ...'; sleep 10s; done" &
+   PID2=$!
+   
+   wait PID1
+   kill $PID2
    popd
 }
 
