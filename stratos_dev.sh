@@ -432,7 +432,7 @@ function installer() {
   chmod +x *.sh
 
   [ -d $STRATOS_PATH ] || mkdir $STRATOS_PATH
-  echo '' | sudo ./setup.sh -p "default" -s &
+  echo '' | sudo ./setup.sh -p "default" -s
 
   popd
 }
