@@ -17,7 +17,11 @@
 # under the License.
 
 # IP Address for this host
-IP_ADDR="192.168.56.5"
+if [[ $TRAVIS -eq "true" ]]; then
+  IP_ADDR="127.0.0.1"
+else
+  IP_ADDR="192.168.56.5"
+fi
 
 # Assume puppet is to be installed locally 
 PUPPET_IP_ADDR="127.0.0.1"
@@ -572,18 +576,21 @@ function maven_clean_install () {
    pushd $PWD
    cd ${HOME}/incubator-stratos
    
-   # hack to get travis CI build from failing
-   # we need maven to be quiet, but still output something
-   # or travis thinks the build has failed
+   if [[ $TRAVIS -eq "true" ]]; then
+     # hack to get travis CI build from failing
+     # we need maven to be quiet, but still output something
+     # or travis thinks the build has failed
+     mvn -q clean install -DskipTests &
+     PID1=$!
    
-   mvn -q clean install -DskipTests &
-   PID1=$!
+     bash -c "while true; do echo $(date) ' - building ...'; sleep 10s; done" &
+     PID2=$!
    
-   bash -c "while true; do echo $(date) ' - building ...'; sleep 10s; done" &
-   PID2=$!
-   
-   wait PID1
-   kill $PID2
+     wait $PID1
+     kill $PID2
+   else
+     mvn clean install -DskipTests
+   fi
    popd
 }
 
