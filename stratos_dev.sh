@@ -587,7 +587,7 @@ function maven_clean_install () {
      mvn -q clean install -DskipTests &
      PID1=$!
    
-     bash -c "while true; do echo $(date) ' - building ...'; sleep 60s; done" &
+     bash -c "while true; do echo \$(date) ' - building ...'; sleep 60s; done" &
      PID2=$!
    
      wait $PID1
