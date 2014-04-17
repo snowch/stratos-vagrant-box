@@ -328,6 +328,10 @@ fi
 
   sudo sed -i -E "s:(\s*[$]java_name.*=).*$:\1 \"jdk1.7.0_51\":g" /etc/puppet/manifests/nodes.pp
   sudo sed -i -E "s:(\s*[$]java_distribution.*=).*$:\1 \"jdk-7u51-linux-${JAVA_ARCH}.tar.gz\":g" /etc/puppet/manifests/nodes.pp
+
+  # add unqualified hostname to /etc/hosts because that isn't done by puppetinstall
+  sudo sed -i -e "s@puppet.${DOMAINNAME}\s*\$@puppet.${DOMAINNAME} puppet@g" /etc/hosts
+
   popd 
 
   echo -e "\e[32mFinished setting up puppet\e[39m"
