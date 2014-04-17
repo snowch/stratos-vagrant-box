@@ -94,7 +94,6 @@ SERVICE_TOKEN=g
 #VIRT_DRIVER=docker
 SCREEN_LOGDIR=$DEST/logs/screen
 #OFFLINE=True
-ENABLED_SERVICES+=,-rabbit
 EOF
 
    cd ${HOME}/devstack
