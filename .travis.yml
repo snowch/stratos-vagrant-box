@@ -4,6 +4,7 @@ before_script:
  - sudo sh -c 'echo "stratos:stratos" | chpasswd'
  - sudo sh -c 'umask 0226; echo "stratos ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/stratos'
  - sudo sh -c 'echo "Defaults:stratos secure_path=/sbin:/usr/sbin:/usr/bin:/bin:/usr/local/sbin:/usr/local/bin" >> /etc/sudoers.d/stratos'
+ - sudo -iE -u stratos sh -c 'bash -x /home/travis/build/snowch/devcloud-script/stratos_dev.sh -w'
  - sudo -iE -u stratos sh -c 'bash -x /home/travis/build/snowch/devcloud-script/stratos_dev.sh -c'
  - sudo -iE -u stratos sh -c 'bash -x /home/travis/build/snowch/devcloud-script/stratos_dev.sh -b'
  - sudo -iE -u stratos sh -c 'bash -x /home/travis/build/snowch/devcloud-script/stratos_dev.sh -p'
