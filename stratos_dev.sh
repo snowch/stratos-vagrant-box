@@ -55,7 +55,7 @@ STRATOS_PATH="${HOME}/stratos"
 WSO2_CEP_URL="http://people.apache.org/~chsnow"
 WSO2_CEP_FILE="wso2cep-3.0.0.zip"
 
-# ActiveMQ 5.9.1 location.  Note: only 5.8.0 is supported by this script
+# ActiveMQ 5.9.1 location.  Note: only 5.9.1 is supported by this script
 ACTIVEMQ_URL="http://archive.apache.org/dist//activemq/5.9.1/"
 ACTIVEMQ_FILE="apache-activemq-5.9.1-bin.tar.gz"
 
@@ -439,14 +439,14 @@ function installer() {
 
 function start_servers() {
 
-  $STRATOS_PATH/apache-activemq-5.8.0/bin/activemq restart > /dev/null 2>&1
+  $STRATOS_PATH/apache-activemq-5.9.1/bin/activemq restart > /dev/null 2>&1
 
   $STRATOS_PATH/apache-stratos/bin/stratos.sh -Dprofile=default --restart > /dev/null 2>&1
 
   echo "Servers starting."
   echo "Check status using: $progname -t"
   echo "Logs:"
-  echo "  ActiveMQ -> ./stratos/apache-activemq-5.8.0/data/activemq.log"
+  echo "  ActiveMQ -> ./stratos/apache-activemq-5.9.1/data/activemq.log"
   echo "  Stratos  -> ./stratos/apache-stratos/repository/logs/wso2carbon.log"
 }
 
@@ -459,7 +459,7 @@ function kill_servers() {
   
   $STRATOS_PATH/apache-stratos/bin/stratos.sh --stop > /dev/null 2>&1
 
-  $STRATOS_PATH/apache-activemq-5.8.0/bin/activemq stop > /dev/null 2>&1
+  $STRATOS_PATH/apache-activemq-5.9.1/bin/activemq stop > /dev/null 2>&1
 
   echo "Servers stopped."
   echo "  Check status using $progname -t"
@@ -471,7 +471,7 @@ function servers_status() {
   # ignore errors
   trap - ERR
 
-  $STRATOS_PATH/apache-activemq-5.8.0/bin/activemq status | tail -1
+  $STRATOS_PATH/apache-activemq-5.9.1/bin/activemq status | tail -1
 
   stratos_pid=$(cat $STRATOS_PATH/apache-stratos/wso2carbon.pid)
   java_pids=$(pgrep -u $(whoami) -f java)
@@ -485,7 +485,7 @@ function servers_status() {
   fi
 
   echo "Logs:"
-  echo "  ActiveMQ -> ./stratos/apache-activemq-5.8.0/data/activemq.log"
+  echo "  ActiveMQ -> ./stratos/apache-activemq-5.9.1/data/activemq.log"
   echo "  Stratos  -> ./stratos/apache-stratos/repository/logs/wso2carbon.log"
 }
 
