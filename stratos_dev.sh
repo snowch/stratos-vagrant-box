@@ -77,7 +77,7 @@ if grep -qv 'Ubuntu 13.04' /etc/issue; then
   clear
 fi
 
-if [[ $(whoami) != 'vagrant' ]] || [[ $(whoami) != 'stratos' ]] ; then
+if [[ ! $(whoami) =~ (vagrant|stratos) ]] ; then
   echo "This script is designed to be run as user 'vagrant' or 'stratos'."
   echo ""
   echo "You can create a user account, as administrator:"
