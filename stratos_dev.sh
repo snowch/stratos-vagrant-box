@@ -18,6 +18,8 @@
 
 # IP Address for this host
 if [[ $TRAVIS == "true" ]]; then
+  # We don't know the interfaces we will have on the TRAVIS CI build
+  # so use the localhost address
   IP_ADDR="127.0.0.1"
 else
   IP_ADDR="192.168.56.5"
