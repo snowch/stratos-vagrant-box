@@ -1,3 +1,5 @@
+# Example 'iaas.conf' file
+
 # EC2 settings
 export ec2_provider_enabled=true
 export ec2_identity=ec2_identity
