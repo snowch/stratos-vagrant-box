@@ -74,6 +74,8 @@ function full_setup() {
 }
 
 function devstack_setup() {
+
+   pushd $PWD
    
    echo -e "\e[32mPerforming initial setup.\e[39m"
 
@@ -116,9 +118,13 @@ EOF
    echo "Username: admin or demo"
    echo "Passsword: g"
    echo "============================================="
+
+   popd
 }
 
 function start_instance() {
+
+   pushd $PWD
 
    set +u
    . ${DEVSTACK_HOME}/openrc
@@ -172,6 +178,8 @@ function start_instance() {
    instance_ip=$(nova list | grep 'ubuntu' | cut -d'|' -f7 | cut -d= -f2)
    echo "Connect using: "
    echo "ssh -i openstack-demo-keypair.pem ubuntu@$instance_ip"
+
+   popd
 }
 
 main "$@"
