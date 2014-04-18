@@ -437,7 +437,20 @@ function installer() {
   sed -i "s:^export ec2_availability_zone=.*:export ec2_availability_zone='$ec2_availability_zone':g" $CFG_FILE
   sed -i "s:^export ec2_security_groups=.*:export ec2_security_groups='$ec2_security_groups':g" $CFG_FILE
 
-  # TODO openstack configuration
+  # Openstack
+  sed -i "s:^export openstack_provider_enabled=.*:export openstack_provider_enabled='$openstack_provider_enabled':g" $CFG_FILE
+  sed -i "s:^export openstack_identity=.*:export openstack_identity='$openstack_identity':g" $CFG_FILE
+  sed -i "s:^export openstack_credential=.*:export openstack_credential='$openstack_credential':g" $CFG_FILE
+  sed -i "s:^export openstack_jclouds_endpoint=.*:export openstack_jclouds_endpoint='$openstack_jclouds_endpoint':g" $CFG_FILE
+  sed -i "s:^export openstack_keypair_name=.*:export openstack_keypair_name='$openstack_keypair_name':g" $CFG_FILE
+  sed -i "s:^export openstack_security_groups=.*:export openstack_security_groups='$openstack_security_groups':g" $CFG_FILE
+
+  # vCloud
+  sed -i "s:^export vcloud_provider_enabled=.*:export vcloud_provider_enabled='$vcloud_provider_enabled':g" $CFG_FILE
+  sed -i "s:^export vcloud_identity=.*:export vcloud_identity='$vcloud_identity':g" $CFG_FILE
+  sed -i "s:^export vcloud_credential=.*:export vcloud_credential='$vcloud_credential':g" $CFG_FILE
+  sed -i "s:^export vcloud_jclouds_endpoint=.*:export vcloud_jclouds_endpoint='$vcloud_jclouds_endpoint':g" $CFG_FILE
+    
 
   cd $STRATOS_SETUP_PATH
   chmod +x *.sh
