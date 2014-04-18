@@ -91,7 +91,6 @@ RABBIT_PASSWORD=g
 SERVICE_PASSWORD=g
 SERVICE_TOKEN=g
 #SCHEDULER=nova.scheduler.filter_scheduler.FilterScheduler
-#VIRT_DRIVER=docker
 SCREEN_LOGDIR=$DEST/logs/screen
 #OFFLINE=True
 EOF
@@ -106,16 +105,13 @@ EOF
    nova secgroup-add-rule default tcp 22 22 0.0.0.0/0
    nova secgroup-add-rule default icmp -1 -1 0.0.0.0/0
 
-   echo "==============================================="
-   echo "Openstack installation finished.  Restart using"
-   echo "'vagrant reload'"
-   echo ""
-   echo "Then login using:"
+   echo "============================================="
+   echo "Openstack installation finished. Login using:"
    echo ""
    echo "URL http://192.168.92.30/"
    echo "Username: admin or demo"
    echo "Passsword: g"
-   echo "=============================================="
+   echo "============================================="
  
 
 }
