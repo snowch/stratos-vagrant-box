@@ -35,10 +35,12 @@ function finish {
 trap finish SIGINT
 
 function main() {
-  while getopts 'fh' flag; do
+  while getopts 'fdih' flag; do
     progarg=${flag}
     case "${flag}" in
-      f) initial_setup ; exit $? ;;
+      f) full_setup; exit $? ;;
+      d) devstack_setup; exit $? ;;
+      i) start_instance; exit $? ;;
       h) usage ; exit $? ;;
       \?) usage ; exit $? ;;
       *) usage ; exit $? ;;
@@ -49,11 +51,15 @@ function main() {
 
 function usage () {
    cat <<EOF
-Usage: $progname -[f|h]
+Usage: $progname -[f|d|i|h]
 
 Where:
 
     -f perform a complete setup of the openstack runtime environment
+
+    -d perform devstack setup
+
+    -i setup images and start instance
 
     -h show this help message
 
@@ -62,7 +68,12 @@ EOF
    exit 0
 }
 
-function initial_setup() {
+function full_setup() {
+   devstack_setup
+   start_instance
+}
+
+function devstack_setup() {
    
    echo -e "\e[32mPerforming initial setup.\e[39m"
 
@@ -98,13 +109,6 @@ EOF
    cd ${HOME}/devstack
    ./stack.sh
 
-   set +u
-   . ${DEVSTACK_HOME}/openrc
-   set -u
-
-   nova secgroup-add-rule default tcp 22 22 0.0.0.0/0
-   nova secgroup-add-rule default icmp -1 -1 0.0.0.0/0
-
    echo "============================================="
    echo "Openstack installation finished. Login using:"
    echo ""
@@ -112,8 +116,62 @@ EOF
    echo "Username: admin or demo"
    echo "Passsword: g"
    echo "============================================="
- 
+}
 
+function start_instance() {
+
+   set +u
+   . ${DEVSTACK_HOME}/openrc
+   set -u
+
+   if ! $(nova secgroup-list-rules default | grep -q 'tcp'); then
+     nova secgroup-add-rule default tcp 22 22 0.0.0.0/0
+   fi
+
+   if ! $(nova secgroup-list-rules default | grep -q 'icmp'); then
+     nova secgroup-add-rule default icmp -1 -1 0.0.0.0/0
+   fi
+
+   echo "Starting Ubuntu image download"
+
+   # From: http://docs.openstack.org/image-guide/content/ch_obtaining_images.html#ubuntu-images
+   wget -nv -c http://uec-images.ubuntu.com/precise/current/precise-server-cloudimg-amd64-disk1.img
+
+   echo "Finished Ubuntu image download"
+
+   # check we haven't already added the image
+   image=$(nova image-list | grep 'Ubuntu 12.04 64bit' | cut -d'|' -f2)
+
+   if [ -z "$image" ]
+   then
+     glance image-create --name "Ubuntu 12.04 64bit" --is-public true --disk-format qcow2 --container-format bare --file /home/vagrant/precise-server-cloudimg-amd64-disk1.img
+   fi
+
+   # create keypair for 'demo' user.  note: keypair not visible to 'admin' user.
+   nova keypair-add "openstack-demo-keypair" > openstack-demo-keypair.pem
+   chmod 600 openstack-demo-keypair.pem
+
+   # start an instance
+   flavor=$(nova flavor-list | grep 'm1.micro' | cut -d'|' -f2)
+   image=$(nova image-list | grep 'Ubuntu 12.04 64bit' | cut -d'|' -f2)
+   nova boot --flavor $flavor --key-name openstack-demo-keypair --image $image ubuntu
+
+   while : ; do
+     status=$(nova list | grep 'ubuntu' | cut -d'|' -f4)
+     if [ $status == "ERROR" ]; then
+        echo "Error starting instance"
+        exit -1
+     elif [ $status == "ACTIVE" ]; then
+        break
+     fi
+     echo "Waiting for the instance to startup. Current status is: " $status
+     sleep 10s
+   done
+   echo "Instance has started ..."
+
+   instance_ip=$(nova list | grep 'ubuntu' | cut -d'|' -f7 | cut -d= -f2)
+   echo "Connect using: "
+   echo "ssh -i openstack-demo-keypair.pem ubuntu@$instance_ip"
 }
 
 main "$@"
