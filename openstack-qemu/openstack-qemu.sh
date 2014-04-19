@@ -35,11 +35,12 @@ function finish {
 trap finish SIGINT
 
 function main() {
-  while getopts 'fdih' flag; do
+  while getopts 'fodih' flag; do
     progarg=${flag}
     case "${flag}" in
       f) full_setup; exit $? ;;
-      d) devstack_setup; exit $? ;;
+      o) devstack_setup "True"; exit $? ;;
+      d) devstack_setup "False"; exit $? ;;
       i) start_instance; exit $? ;;
       h) usage ; exit $? ;;
       \?) usage ; exit $? ;;
@@ -51,11 +52,13 @@ function main() {
 
 function usage () {
    cat <<EOF
-Usage: $progname -[f|d|i|h]
+Usage: $progname -[f|o|d|i|h]
 
 Where:
 
     -f perform a complete setup of the openstack runtime environment
+
+    -o perform a complete offline setup of the runtime environment
 
     -d perform devstack setup
 
@@ -75,12 +78,22 @@ function full_setup() {
 
 function devstack_setup() {
 
+   set +u
+   offline=$1
+   set -u
+
    pushd $PWD
    
    echo -e "\e[32mPerforming initial setup.\e[39m"
 
-   sudo apt-get update
+   # ensure guests have access to outside world
+   sudo sed -i "s/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/g" /etc/sysctl.conf
+   sudo sysctl -w net.ipv4.ip_forward=1
+   # TODO make this change permanent
+   sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 
+
+   sudo apt-get update
    sudo apt-get install -y git
 
    if [ ! -d devstack ]
@@ -91,7 +104,7 @@ function devstack_setup() {
    cd devstack
    git checkout stable/havana
 
-   cat > ${HOME}/devstack/localrc <<'EOF'
+   cat > ${HOME}/devstack/localrc <<EOF
 HOST_IP=192.168.92.30
 FLOATING_RANGE=192.168.92.0/27
 FIXED_RANGE=10.11.12.0/24
@@ -104,8 +117,8 @@ RABBIT_PASSWORD=g
 SERVICE_PASSWORD=g
 SERVICE_TOKEN=g
 #SCHEDULER=nova.scheduler.filter_scheduler.FilterScheduler
-SCREEN_LOGDIR=$DEST/logs/screen
-#OFFLINE=True
+SCREEN_LOGDIR=\$DEST/logs/screen
+OFFLINE=$offline
 EOF
 
    cd ${HOME}/devstack
@@ -154,13 +167,19 @@ function start_instance() {
    fi
 
    # create keypair for 'demo' user.  note: keypair not visible to 'admin' user.
-   nova keypair-add "openstack-demo-keypair" > openstack-demo-keypair.pem
-   chmod 600 openstack-demo-keypair.pem
+   # FIXME: make this idempotent
+   if [ ! -e openstack-demo-keypair.pem ]
+   then
+     nova keypair-add "openstack-demo-keypair" > openstack-demo-keypair.pem
+     chmod 600 openstack-demo-keypair.pem
+   fi
 
-   # start an instance
-   flavor=$(nova flavor-list | grep 'm1.micro' | cut -d'|' -f2)
-   image=$(nova image-list | grep 'Ubuntu 12.04 64bit' | cut -d'|' -f2)
-   nova boot --flavor $flavor --key-name openstack-demo-keypair --image $image ubuntu
+   if ! (nova list | grep -q ubuntu); then
+     # start an instance
+     flavor=$(nova flavor-list | grep 'm1.micro' | cut -d'|' -f2)
+     image=$(nova image-list | grep 'Ubuntu 12.04 64bit' | cut -d'|' -f2)
+     nova boot --flavor $flavor --key-name openstack-demo-keypair --image $image ubuntu
+   fi
 
    while : ; do
      status=$(nova list | grep 'ubuntu' | cut -d'|' -f4)
@@ -178,6 +197,39 @@ function start_instance() {
    instance_ip=$(nova list | grep 'ubuntu' | cut -d'|' -f7 | cut -d= -f2)
    echo "Connect using: "
    echo "ssh -i openstack-demo-keypair.pem ubuntu@$instance_ip"
+
+#set +u
+
+CMDS=$(cat <<"CMD"
+
+url='https://git-wip-us.apache.org/repos/asf?p=incubator-stratos.git;a=blob_plain;f=tools/puppet3-agent'
+sudo sh -x -c "
+
+apt-get update
+apt-get install -y zip unzip
+mkdir -p /root/bin
+cd /root/bin
+
+wget '${url}/config.sh;hb=HEAD' -O config.sh
+wget '${url}/init.sh;hb=HEAD' -O init.sh
+chmod +x config.sh
+chmod +x init.sh
+mkdir -p /root/bin/puppetinstall
+wget '${url}/puppetinstall/puppetinstall;hb=HEAD' -O puppetinstall/puppetinstall
+wget '${url}/stratos_sendinfo.rb;hb=HEAD' -O stratos_sendinfo.rb
+
+"
+CMD
+) 
+
+   # hack to prevent no route to host error
+   sleep 60s
+
+   echo "Starting to configure the cartridge"
+   ssh -oStrictHostKeyChecking=no -i openstack-demo-keypair.pem ubuntu@$instance_ip -t "$CMDS"
+   echo "Finished configuring the cartridge"
+
+#set -u
 
    popd
 }
