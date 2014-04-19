@@ -55,7 +55,7 @@ Vagrant.configure("2") do |config|
     config.vm.provision "shell", inline: "ln -sf /vagrant/openstack-qemu/openstack-qemu.sh /home/vagrant/openstack-qemu.sh", privileged: false
 
     config.vm.provider "virtualbox" do |v|
-      v.customize ["modifyvm", :id, "--memory", 4096 ]
+      v.customize ["modifyvm", :id, "--memory", 5120 ]
 
       # uncomment these to use the virtualbox gui:
       # v.gui = true
