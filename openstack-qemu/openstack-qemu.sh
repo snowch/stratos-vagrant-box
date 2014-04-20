@@ -198,15 +198,24 @@ function start_instance() {
    echo "Connect using: "
    echo "ssh -i openstack-demo-keypair.pem ubuntu@$instance_ip"
 
+   # hack to prevent no route to host error
+   sleep 60s
+   ping -c1 $instance_ip
+
 #set +u
 
 CMDS=$(cat <<"CMD"
 
 url='https://git-wip-us.apache.org/repos/asf?p=incubator-stratos.git;a=blob_plain;f=tools/puppet3-agent'
-sudo sh -x -c "
+sudo bash -x -c "
 
 apt-get update
-apt-get install -y zip unzip
+apt-get install -y zip unzip expect
+
+if [ -e /root/bin ]; then
+  rm -rf /root/bin
+fi
+
 mkdir -p /root/bin
 cd /root/bin
 
@@ -217,16 +226,33 @@ chmod +x init.sh
 mkdir -p /root/bin/puppetinstall
 wget '${url}/puppetinstall/puppetinstall;hb=HEAD' -O puppetinstall/puppetinstall
 wget '${url}/stratos_sendinfo.rb;hb=HEAD' -O stratos_sendinfo.rb
-
+chmod +x puppetinstall/puppetinstall
 "
 CMD
 ) 
 
-   # hack to prevent no route to host error
-   sleep 60s
-
    echo "Starting to configure the cartridge"
    ssh -oStrictHostKeyChecking=no -i openstack-demo-keypair.pem ubuntu@$instance_ip -t "$CMDS"
+
+EXPECT_SCRIPT=$(cat <<END
+#!/bin/bin/expect
+spawn /root/bin/config.sh
+expect "This script will install and configure puppet agent, do you want to continue *"
+send "y\r"
+expect "Please provide stratos service-name:"
+send "php\r"
+expect "Please provide puppet master IP:"
+send "192.168.56.5\r"
+expect "Please provide puppet master hostname *"
+send "puppet.stratos.com\r"
+expect eof
+END
+) 
+
+   echo "$EXPECT_SCRIPT" | ssh -oStrictHostKeyChecking=no -i openstack-demo-keypair.pem ubuntu@$instance_ip "cat > /home/ubuntu/config.exp"
+
+   ssh -oStrictHostKeyChecking=no -i openstack-demo-keypair.pem ubuntu@$instance_ip "sudo expect /home/ubuntu/config.exp"
+
    echo "Finished configuring the cartridge"
 
 #set -u
