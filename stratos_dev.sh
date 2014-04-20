@@ -423,7 +423,8 @@ function installer() {
   if [[ $TRAVIS == "true" ]]; then
     source /home/travis/build/snowch/devcloud-script/iaas.conf
   else
-    source ${HOME}/iaas.conf
+    # read variables from iaas.conf, escaping colons to prevent later sed statements throwing an error
+    source <(sed 's/:/\\\\:/g' ${HOME}/iaas.conf)
   fi
 
   # Now apply the changes to stratos-setup.conf for each of the IaaS
