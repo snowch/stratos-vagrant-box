@@ -140,7 +140,7 @@ function start_instance() {
    pushd $PWD
 
    set +u
-   . ${DEVSTACK_HOME}/openrc
+   . ${DEVSTACK_HOME}/openrc admin admin
    set -u
 
    if ! $(nova secgroup-list-rules default | grep -q 'tcp'); then
@@ -166,7 +166,6 @@ function start_instance() {
      glance image-create --name "Ubuntu 12.04 64bit" --is-public true --disk-format qcow2 --container-format bare --file /home/vagrant/precise-server-cloudimg-amd64-disk1.img
    fi
 
-   # create keypair for 'demo' user.  note: keypair not visible to 'admin' user.
    # FIXME: make this idempotent
    if [ ! -e openstack-demo-keypair.pem ]
    then
@@ -174,9 +173,13 @@ function start_instance() {
      chmod 600 openstack-demo-keypair.pem
    fi
 
+   if [[ -z $(nova flavor-list | grep 'm1.cartridge') ]]; then
+     nova flavor-create m1.cartridge 18 512 0 1
+   fi
+
    if ! (nova list | grep -q ubuntu); then
      # start an instance
-     flavor=$(nova flavor-list | grep 'm1.micro' | cut -d'|' -f2)
+     flavor=$(nova flavor-list | grep 'm1.cartridge' | cut -d'|' -f2)
      image=$(nova image-list | grep 'Ubuntu 12.04 64bit' | cut -d'|' -f2)
      nova boot --flavor $flavor --key-name openstack-demo-keypair --image $image ubuntu
    fi
