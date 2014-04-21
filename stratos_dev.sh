@@ -48,20 +48,16 @@ STRATOS_SOURCE_PATH="${HOME}/incubator-stratos"
 STRATOS_PATH="${HOME}/stratos"
 
 # WSO2 CEP 3.0.0 location.
-WSO2_CEP_URL="http://people.apache.org/~chsnow"
-WSO2_CEP_FILE="wso2cep-3.0.0.zip"
+WSO2_CEP_URL="http://people.apache.org/~chsnow/wso2cep-3.0.0.zip"
 
 # ActiveMQ 5.9.1 location.  Note: only 5.9.1 is supported by this script
-ACTIVEMQ_URL="http://archive.apache.org/dist//activemq/5.9.1/"
-ACTIVEMQ_FILE="apache-activemq-5.9.1-bin.tar.gz"
+ACTIVEMQ_URL="http://archive.apache.org/dist/activemq/5.9.1/apache-activemq-5.9.1-bin.tar.gz"
 
 # MySQL download location.
-MYSQLJ_URL="http://repo1.maven.org/maven2/mysql/mysql-connector-java/5.1.29"
-MYSQLJ_FILE="mysql-connector-java-5.1.29.jar"
+MYSQLJ_URL="http://repo1.maven.org/maven2/mysql/mysql-connector-java/5.1.29/mysql-connector-java-5.1.29.jar"
 
 # Hawtbuf download location.
-HAWTBUF_URL="http://repo1.maven.org/maven2/org/fusesource/hawtbuf/hawtbuf/1.2"
-HAWTBUF_FILE="hawtbuf-1.2.jar"
+HAWTBUF_URL="http://repo1.maven.org/maven2/org/fusesource/hawtbuf/hawtbuf/1.2/hawtbuf-1.2.jar"
 
 ########################################################
 # You should not need to change anything below this line
@@ -218,16 +214,16 @@ function downloads () {
 
   [ -d $STRATOS_PACK_PATH ] || mkdir $STRATOS_PACK_PATH
 
-  if [ ! -e $STRATOS_PACK_PATH/$WSO2_CEP_FILE ]
+  if [ ! -e $STRATOS_PACK_PATH/$(basename $WSO2_CEP_URL) ]
   then
-     echo "Downloading $WSO2_CEP_URL/$WSO2_CEP_FILE"
-     wget -nv -P $STRATOS_PACK_PATH $WSO2_CEP_URL/$WSO2_CEP_FILE
+     echo "Downloading $WSO2_CEP_URL"
+     wget -nv -P $STRATOS_PACK_PATH $WSO2_CEP_URL
   fi
 
-  if [ ! -e $STRATOS_PACK_PATH/$MYSQLJ_FILE ]
+  if [ ! -e $STRATOS_PACK_PATH/$(basename $MYSQLJ_URL) ]
   then
-     echo "Downloading $MYSQLJ_URL/$MYSQLJ_FILE"
-     wget -nv -P $STRATOS_PACK_PATH $MYSQLJ_URL/$MYSQLJ_FILE
+     echo "Downloading $MYSQLJ_URL"
+     wget -nv -P $STRATOS_PACK_PATH $MYSQLJ_URL
   fi
 }
 
@@ -359,12 +355,6 @@ function puppet_stratos_setup() {
   echo -e "\e[32mFinished setting up puppet\e[39m"
 }
 
-function cartridge_setup() {
-
-  echo "TODO: cartridge setup"
-
-}
-
 function installer() {
 
   echo -e "\e[32mRunning Stratos Installer\e[39m"
@@ -372,6 +362,8 @@ function installer() {
   pushd $PWD
 
   [ -d $STRATOS_SETUP_PATH ] || mkdir $STRATOS_SETUP_PATH
+  [ -d /etc/puppet/modules/agent/files/ ] || sudo mkdir -p /etc/puppet/modules/agent/files/
+  [ -d /etc/puppet/modules/agent/files/activemq ] || sudo mkdir -p /etc/puppet/modules/agent/files/activemq
 
   if [ -d $STRATOS_PATH ]
   then
@@ -388,35 +380,55 @@ function installer() {
   fi
 
   cp -rpf $STRATOS_SOURCE_PATH/tools/stratos-installer/* $STRATOS_SETUP_PATH/
-
   cp -f $STRATOS_SOURCE_PATH/products/stratos/modules/distribution/target/apache-stratos-${STRATOS_VERSION}.zip $STRATOS_PACK_PATH/
 
-  if [ ! -e $STRATOS_PACK_PATH/$ACTIVEMQ_FILE ]
+  sudo cp -f $STRATOS_SOURCE_PATH/products/cartridge-agent/modules/distribution/target/apache-stratos-cartridge-agent-${STRATOS_VERSION}-bin.zip /etc/puppet/modules/agent/files/
+  sudo cp -f $STRATOS_SOURCE_PATH/products/load-balancer/modules/distribution/target/apache-stratos-load-balancer-${STRATOS_VERSION}.zip /etc/puppet/modules/lb/files/
+
+  if [ ! -e $STRATOS_PACK_PATH/$(basename $ACTIVEMQ_URL) ]
   then
      echo "Downloading $ACTIVEMQ_URL/$ACTIVEMQ_FILE"
-     wget -nv -P $STRATOS_PACK_PATH $ACTIVEMQ_URL/$ACTIVEMQ_FILE
+     wget -nv -P $STRATOS_PACK_PATH $ACTIVEMQ_URL
   fi
 
-  [ -e tmp-activemq ] || mkdir tmp-activemq
-  tar -C tmp-activemq -xzf $STRATOS_PACK_PATH/$ACTIVEMQ_FILE 
+  if [ -e tmp-activemq ] 
+  then
+    # clean up from any previous installation attempts
+    rm -rf tmp-activemq
+  fi
+  mkdir tmp-activemq
+  tar -C tmp-activemq -xzf $STRATOS_PACK_PATH/$(basename $ACTIVEMQ_URL) 
   cp -f tmp-activemq/apache-activemq-5.9.1/lib/activemq-broker-5.9.1.jar $STRATOS_PACK_PATH/
   cp -f tmp-activemq/apache-activemq-5.9.1/lib/activemq-client-5.9.1.jar $STRATOS_PACK_PATH/
   cp -f tmp-activemq/apache-activemq-5.9.1/lib/geronimo-j2ee-management_1.1_spec-1.0.1.jar $STRATOS_PACK_PATH/
   cp -f tmp-activemq/apache-activemq-5.9.1/lib/geronimo-jms_1.1_spec-1.1.1.jar $STRATOS_PACK_PATH/
   rm -rf tmp-activemq
 
-  if [ ! -e $STRATOS_PACK_PATH/$HAWTBUF_FILE ]
+  if [ ! -e $STRATOS_PACK_PATH/$(basename $HAWTBUF_URL) ]
   then
-     echo "Downloading $HAWTBUF_URL/$HAWTBUF_FILE"
-     wget -nv -P $STRATOS_PACK_PATH $HAWTBUF_URL/$HAWTBUF_FILE
+     echo "Downloading $HAWTBUF_URL"
+     wget -nv -P $STRATOS_PACK_PATH $HAWTBUF_URL
   fi
+
+  # TODO refactor this duplicated code
+  sudo cp -f $STRATOS_PACK_PATH/activemq-broker-5.9.1.jar /etc/puppet/modules/agent/files/activemq/
+  sudo cp -f $STRATOS_PACK_PATH/activemq-client-5.9.1.jar /etc/puppet/modules/agent/files/activemq/
+  sudo cp -f $STRATOS_PACK_PATH/geronimo-j2ee-management_1.1_spec-1.0.1.jar /etc/puppet/modules/agent/files/activemq/
+  sudo cp -f $STRATOS_PACK_PATH/geronimo-jms_1.1_spec-1.1.1.jar /etc/puppet/modules/agent/files/activemq/
+  sudo cp -f $STRATOS_PACK_PATH/$(basename $HAWTBUF_URL) /etc/puppet/modules/agent/files/activemq/
+
+  sudo cp -f $STRATOS_PACK_PATH/activemq-broker-5.9.1.jar /etc/puppet/modules/lb/files/
+  sudo cp -f $STRATOS_PACK_PATH/activemq-client-5.9.1.jar /etc/puppet/modules/lb/files/
+  sudo cp -f $STRATOS_PACK_PATH/geronimo-j2ee-management_1.1_spec-1.0.1.jar /etc/puppet/modules/lb/files/
+  sudo cp -f $STRATOS_PACK_PATH/geronimo-jms_1.1_spec-1.1.1.jar /etc/puppet/modules/lb/files/
+  sudo cp -f $STRATOS_PACK_PATH/$(basename $HAWTBUF_URL) /etc/puppet/modules/lb/files/
 
   CFG_FILE=$STRATOS_SETUP_PATH/conf/setup.conf
 
   sed -i "s:^export setup_path=.*:export setup_path=$STRATOS_SETUP_PATH:g" $CFG_FILE
   sed -i "s:^export stratos_packs=.*:export stratos_packs=$STRATOS_PACK_PATH:g" $CFG_FILE
   sed -i "s:^export stratos_path=.*:export stratos_path=$STRATOS_PATH:g" $CFG_FILE
-  sed -i "s:^export mysql_connector_jar=.*:export mysql_connector_jar=$STRATOS_PACK_PATH/$MYSQLJ_FILE:g" $CFG_FILE
+  sed -i "s:^export mysql_connector_jar=.*:export mysql_connector_jar=$STRATOS_PACK_PATH/$(basename $MYSQLJ_URL):g" $CFG_FILE
   sed -i "s:^export JAVA_HOME=.*:export JAVA_HOME=$JAVA_HOME:g" $CFG_FILE
   sed -i "s:^export log_path=.*:export log_path=$HOME/stratos-log:g" $CFG_FILE
   sed -i "s:^export host_user=.*:export host_user=$(whoami):g" $CFG_FILE
@@ -648,7 +660,6 @@ function initial_setup() {
    checkout
    maven_clean_install
    puppet_stratos_setup # has a dependency on maven_clean_install
-   cartridge_setup
    installer
 }
 
