@@ -17,16 +17,10 @@
 # under the License.
 
 # IP Address for this host
-if [[ $TRAVIS == "true" ]]; then
-  # We don't know the interfaces we will have on the TRAVIS CI build
-  # so use the localhost address
-  IP_ADDR="127.0.0.1"
-else
-  IP_ADDR="192.168.56.5"
-fi
+IP_ADDR="192.168.56.5"
 
-# Assume puppet is to be installed locally 
-PUPPET_IP_ADDR="127.0.0.1"
+# Puppet Master IP Address
+PUPPET_IP_ADDR="$IP_ADDR"
 
 # The domain name of this server
 DOMAINNAME="stratos.com"
@@ -129,14 +123,15 @@ error() {
 trap 'error ${LINENO}' ERR
 
 function main() {
-  while getopts 'fwcbpndskth' flag; do
+  while getopts 'fwcbmpndskth' flag; do
     progarg=${flag}
     case "${flag}" in
       f) initial_setup ; exit $? ;;
       w) downloads; exit $? ;;
       c) checkout; exit $? ;;
       b) maven_clean_install; exit $? ;;
-      p) puppet_setup; exit $? ;;
+      m) puppet_base_setup; exit $? ;;
+      p) puppet_stratos_setup; exit $? ;;
       n) installer; exit $? ;;
       d) development_environment; exit $? ;;
       s) start_servers; exit $? ;;
@@ -152,7 +147,7 @@ function main() {
 
 function usage () {
    cat <<EOF
-Usage: $progname -[f|w|c|b|p|n|d|h]
+Usage: $progname -[f|w|c|b|m|p|n|d|h]
 
 Where:
        ----------------------------------------------------------------
@@ -167,9 +162,10 @@ Where:
     -f perform a complete setup of the stratos runtime environment
 
        This command is the same as running:
-       $progname -w && $progname -c && $progname -b && $progname -p && $progname -n
+       $progname -m && $progname -w && $progname -c && $progname -b && $progname -p && $progname -n
 
     -w Download pre-requisite files such as WSO2 CEP and MYSQLJ
+
 
     -c Checkout Stratos 'master' code.  
        Each time you run this command, this script will do a 'git pull'
@@ -177,7 +173,9 @@ Where:
     -b Builds Stratos.  Equivalent to running: 'mvn clean install'
        You will probably want to re-run this after you modify or pull new source 
 
-    -p Setup Puppet for Stratos. 
+    -m Setup base puppet master
+
+    -p Setup puppet master for Stratos. 
        You will probably want to re-run this after you re-build Stratos.
 
     -n Install Stratos (and startup Stratos).
@@ -242,6 +240,7 @@ function fix_git_tls_bug() {
     # we have already setup git
     return
   fi
+  sudo apg-et update
   sudo apt-get install -y build-essential fakeroot dpkg-dev
   mkdir ~/git-openssl
   cd ~/git-openssl
@@ -285,43 +284,35 @@ function prerequisites() {
   . .profile
 }
 
-function puppet_setup() {
+function puppet_base_setup() {
 
-  echo -e "\e[32mSetting up puppet\e[39m"
+  echo -e "\e[32mSetting up puppet master base\e[39m"
 
   pushd $PWD
   cd ${HOME}
 
+  sudo apt-get update
+  sudo apt-get install -y git
+
+  # FIXME make this idempotent - i.e. same result each time it is run
   if [ ! -d puppetinstall ]
   then
     git clone https://github.com/thilinapiy/puppetinstall
     cd puppetinstall
-    echo '' | sudo ./puppetinstall -m -d $DOMAINNAME
+    echo '' | sudo ./puppetinstall -m -d $DOMAINNAME -s $PUPPET_IP_ADDR
   fi
 
   [ -d /etc/puppet/modules/agent/files ] || sudo mkdir -p /etc/puppet/modules/agent/files
 
-  sudo cp -rf $STRATOS_SOURCE_PATH/tools/puppet3/manifests/* /etc/puppet/manifests/
-  sudo cp -rf $STRATOS_SOURCE_PATH/tools/puppet3/modules/* /etc/puppet/modules/
-  sudo cp -f $STRATOS_SOURCE_PATH/products/cartridge-agent/modules/distribution/target/apache-stratos-cartridge-agent-*-bin.zip /etc/puppet/modules/agent/files
-  sudo cp -f $STRATOS_SOURCE_PATH/products/load-balancer/modules/distribution/target/apache-stratos-load-balancer-*.zip /etc/puppet/modules/agent/files
+  #if [ "$(arch)" == "x86_64" ]
+  #then
+  #  JAVA_ARCH="x64"
+  #else
+  #  JAVA_ARCH="i586"
+  #fi
 
-  sudo sh -c 'echo "*.$DOMAINNAME" > /etc/puppet/autosign.conf'
-
-  sudo sed -i -E "s:(\s*[$]local_package_dir.*=).*$:\1 \"$HOME/packs\":g" /etc/puppet/manifests/nodes.pp
-  sudo sed -i -E "s:(\s*[$]mb_ip.*=).*$:\1 \"$IP_ADDR\":g" /etc/puppet/manifests/nodes.pp
-  sudo sed -i -E "s:(\s*[$]mb_port.*=).*$:\1 \"$MB_PORT\":g" /etc/puppet/manifests/nodes.pp
-  sudo sed -i -E "s:(\s*[$]cep_ip.*=).*$:\1 \"$IP_ADDR\":g" /etc/puppet/manifests/nodes.pp
-  sudo sed -i -E "s:(\s*[$]cep_port.*=).*$:\1 \"$CEP_PORT\":g" /etc/puppet/manifests/nodes.pp
-  # TODO move hardcoded strings to variables
-  sudo sed -i -E "s:(\s*[$]truststore_password.*=).*$:\1 \"wso2carbon\":g" /etc/puppet/manifests/nodes.pp
-
-if [ "$(arch)" == "x86_64" ]
-then
+  # WARNING: currently Stratos only supports 64 bit cartridges
   JAVA_ARCH="x64"
-else
-  JAVA_ARCH="i586"
-fi
 
   echo 'Downloading Oracle JDK'
 
@@ -330,11 +321,38 @@ fi
             --header "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie" \
             "http://download.oracle.com/otn-pub/java/jdk/7u51-b13/jdk-7u51-linux-${JAVA_ARCH}.tar.gz"
 
+  # add unqualified hostname to /etc/hosts because that isn't done by puppetinstall
+  sudo sed -i -e "s@puppet.${DOMAINNAME}\s*\$@puppet.${DOMAINNAME} puppet@g" /etc/hosts
+
+  sudo sh -c "echo \"*.$DOMAINNAME\" > /etc/puppet/autosign.conf"
+
+  popd
+
+}
+
+function puppet_stratos_setup() {
+
+  echo -e "\e[32mSetting up puppet master for Stratos\e[39m"
+
+  pushd $PWD
+
+  # Stratos specific puppet setup
+
+  sudo cp -rf $STRATOS_SOURCE_PATH/tools/puppet3/manifests/* /etc/puppet/manifests/
+  sudo cp -rf $STRATOS_SOURCE_PATH/tools/puppet3/modules/* /etc/puppet/modules/
+  sudo cp -f $STRATOS_SOURCE_PATH/products/cartridge-agent/modules/distribution/target/apache-stratos-cartridge-agent-*-bin.zip /etc/puppet/modules/agent/files
+  sudo cp -f $STRATOS_SOURCE_PATH/products/load-balancer/modules/distribution/target/apache-stratos-load-balancer-*.zip /etc/puppet/modules/agent/files
+
   sudo sed -i -E "s:(\s*[$]java_name.*=).*$:\1 \"jdk1.7.0_51\":g" /etc/puppet/manifests/nodes.pp
   sudo sed -i -E "s:(\s*[$]java_distribution.*=).*$:\1 \"jdk-7u51-linux-${JAVA_ARCH}.tar.gz\":g" /etc/puppet/manifests/nodes.pp
 
-  # add unqualified hostname to /etc/hosts because that isn't done by puppetinstall
-  sudo sed -i -e "s@puppet.${DOMAINNAME}\s*\$@puppet.${DOMAINNAME} puppet@g" /etc/hosts
+  sudo sed -i -E "s:(\s*[$]local_package_dir.*=).*$:\1 \"$HOME/packs\":g" /etc/puppet/manifests/nodes.pp
+  sudo sed -i -E "s:(\s*[$]mb_ip.*=).*$:\1 \"$IP_ADDR\":g" /etc/puppet/manifests/nodes.pp
+  sudo sed -i -E "s:(\s*[$]mb_port.*=).*$:\1 \"$MB_PORT\":g" /etc/puppet/manifests/nodes.pp
+  sudo sed -i -E "s:(\s*[$]cep_ip.*=).*$:\1 \"$IP_ADDR\":g" /etc/puppet/manifests/nodes.pp
+  sudo sed -i -E "s:(\s*[$]cep_port.*=).*$:\1 \"$CEP_PORT\":g" /etc/puppet/manifests/nodes.pp
+  # TODO move hardcoded strings to variables
+  sudo sed -i -E "s:(\s*[$]truststore_password.*=).*$:\1 \"wso2carbon\":g" /etc/puppet/manifests/nodes.pp
 
   popd 
 
@@ -403,7 +421,6 @@ function installer() {
   sed -i "s:^export log_path=.*:export log_path=$HOME/stratos-log:g" $CFG_FILE
   sed -i "s:^export host_user=.*:export host_user=$(whoami):g" $CFG_FILE
   sed -i "s:^export stratos_domain=.*:export stratos_domain=$DOMAINNAME:g" $CFG_FILE
-  sed -i "s:^export machine_ip=.*:export machine_ip=\"127.0.0.1\":g" $CFG_FILE
   sed -i "s:^export offset=.*:export offset=0:g" $CFG_FILE
   sed -i "s:^export mb_ip=.*:export mb_ip=$MB_IP_ADDR:g" $CFG_FILE
   sed -i "s:^export mb_port=.*:export mb_port=$MB_PORT:g" $CFG_FILE
@@ -419,13 +436,8 @@ function installer() {
   sed -i "s:^export userstore_db_user=.*:export userstore_db_user=\"root\":g" $CFG_FILE
   sed -i "s:^export userstore_db_pass=.*:export userstore_db_pass=\"password\":g" $CFG_FILE
 
-  # pick up the user's IaaS settings
-  if [[ $TRAVIS == "true" ]]; then
-    source /home/travis/build/snowch/devcloud-script/iaas.conf
-  else
-    # read variables from iaas.conf, escaping colons to prevent later sed statements throwing an error
-    source <(sed 's/:/\\\\:/g' ${HOME}/iaas.conf)
-  fi
+  # read variables from iaas.conf, escaping colons to prevent later sed statements throwing an error
+  source <(sed 's/:/\\\\:/g' ${HOME}/iaas.conf)
 
   # Now apply the changes to stratos-setup.conf for each of the IaaS
 
@@ -605,21 +617,7 @@ function maven_clean_install () {
    pushd $PWD
    cd ${HOME}/incubator-stratos
    
-   if [[ $TRAVIS == "true" ]]; then
-     # hack to get travis CI build from failing
-     # we need maven to be quiet, but still output something
-     # or travis thinks the build has failed
-     mvn -q clean install -DskipTests &
-     PID1=$!
-   
-     bash -c "while true; do echo \$(date) ' - building ...'; sleep 60s; done" &
-     PID2=$!
-   
-     wait $PID1
-     kill $PID2
-   else
-     mvn clean install -DskipTests
-   fi
+   mvn clean install -DskipTests
    popd
 }
 
@@ -644,11 +642,12 @@ function force_clean () {
 function initial_setup() {
    
    echo -e "\e[32mPerforming initial setup.\e[39m"
+   puppet_base_setup
    downloads   
    prerequisites
    checkout
    maven_clean_install
-   puppet_setup # has a dependency on maven_clean_install
+   puppet_stratos_setup # has a dependency on maven_clean_install
    cartridge_setup
    installer
 }

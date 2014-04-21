@@ -198,8 +198,8 @@ function start_instance() {
    echo "Connect using: "
    echo "ssh -i openstack-demo-keypair.pem ubuntu@$instance_ip"
 
-   # hack to prevent no route to host error
-   sleep 60s
+   # wait for the guest to start
+   sleep 3m 
    ping -c1 $instance_ip
 
 #set +u
@@ -208,6 +208,9 @@ CMDS=$(cat <<"CMD"
 
 url='https://git-wip-us.apache.org/repos/asf?p=incubator-stratos.git;a=blob_plain;f=tools/puppet3-agent'
 sudo bash -x -c "
+
+echo \"export LC_ALL=\"en_US.UTF-8\"\" >> /root/.bashrc
+source /root/.bashrc
 
 apt-get update
 apt-get install -y zip unzip expect
@@ -227,6 +230,8 @@ mkdir -p /root/bin/puppetinstall
 wget '${url}/puppetinstall/puppetinstall;hb=HEAD' -O puppetinstall/puppetinstall
 wget '${url}/stratos_sendinfo.rb;hb=HEAD' -O stratos_sendinfo.rb
 chmod +x puppetinstall/puppetinstall
+
+sed -i 's:^TIMEZONE=.*$:TIMEZONE=\"Etc/UTC\":g' /root/bin/puppetinstall/puppetinstall
 "
 CMD
 ) 
@@ -235,7 +240,8 @@ CMD
    ssh -oStrictHostKeyChecking=no -i openstack-demo-keypair.pem ubuntu@$instance_ip -t "$CMDS"
 
 EXPECT_SCRIPT=$(cat <<END
-#!/bin/bin/expect
+#!/usr/bin/expect
+set timeout -1
 spawn /root/bin/config.sh
 expect "This script will install and configure puppet agent, do you want to continue *"
 send "y\r"
