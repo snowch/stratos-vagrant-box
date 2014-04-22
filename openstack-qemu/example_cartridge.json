@@ -1,0 +1,29 @@
+{
+  "type": "php",
+  "provider": "apache",
+  "host": "stratos.com",
+  "displayName": "PHP",
+  "description": "PHP Cartridge",
+  "version": "7",
+  "multiTenant": "false",
+  "portMapping": [
+    {
+      "protocol": "http",
+      "port": "80",
+      "proxyPort": "8280"
+    }
+  ],
+  "deployment": {},
+  "iaasProvider": [
+    {
+      "type": "openstack",
+      "imageId": "RegionOne/____CHANGE_ME____",
+      "property": [
+        {
+          "name": "instanceType",
+          "value": "RegionOne/2"
+        }
+      ]
+    }
+  ]
+}
