@@ -262,7 +262,19 @@ END
 
    ssh -oStrictHostKeyChecking=no -i openstack-demo-keypair.pem ubuntu@$instance_ip "sudo expect /home/ubuntu/config.exp"
 
-   echo "Finished configuring the cartridge"
+
+   cartridge_image=$(nova image-list | grep 'Ubuntu 12.04 64bit Cartridge' | cut -d'|' -f2)
+
+   if [ ! -z "$cartridge_image" ]
+   then
+     echo "Found an old cartridge image so deleting it."
+     nova image-delete $cartridge_image
+   fi
+   nova image-create ubuntu 'Ubuntu 12.04 64bit Cartridge' 
+   cartridge_image=$(nova image-list | grep 'Ubuntu 12.04 64bit Cartridge' | cut -d'|' -f2)
+
+   echo "Finished configuring the cartridge."
+   echo "Note the cartridge id: $cartridge_image"
 
 #set -u
 
