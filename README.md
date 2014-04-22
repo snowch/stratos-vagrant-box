@@ -1,9 +1,6 @@
 Stratos Runtime and Development Environments 
 ============================================
 
-Build status for ```stratos_dev.sh``` Stratos setup script: [![Build Status](https://travis-ci.org/snowch/devcloud-script.png?branch=master)](https://travis-ci.org/snowch/devcloud-script)
-
-
 ## Stratos Runtime Environment
 
 ### Overview
@@ -17,6 +14,8 @@ This environment also provides a local Cloudstack vagrant environment for those 
 ### Pre-requisites
 
 This environment uses Vagrant [(download)](http://www.vagrantup.com/downloads.html) and Virtualbox [(download)](https://www.virtualbox.org/wiki/Downloads).
+
+Make sure you install Vagrant from the above link and not your distribution's vagrant package.
 
 Tested with:
 
