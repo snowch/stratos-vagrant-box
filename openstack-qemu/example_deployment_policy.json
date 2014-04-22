@@ -1,0 +1,16 @@
+{
+  "id": "economyDeployment",
+  "partitionGroup": [
+    {
+      "id": "G1",
+      "partitionAlgo": "round-robin",
+      "partition": [
+        {
+          "id": "P1",
+          "partitionMax": "3",
+          "partitionMin": "1"
+        }
+      ]
+    }
+  ]
+}
