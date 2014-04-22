@@ -5,8 +5,8 @@
 
 # Openstack 
 export openstack_provider_enabled=true
-export openstack_identity="stratos:stratos" # Openstack project name:Openstack login user
-export openstack_credential="password" # Openstack login password
+export openstack_identity="admin" # Openstack project name:Openstack login user
+export openstack_credential="g" # Openstack login password
 export openstack_jclouds_endpoint="http://192.168.92.30:5000/v2.0"
 export openstack_keypair_name=""
 export openstack_security_groups=""
