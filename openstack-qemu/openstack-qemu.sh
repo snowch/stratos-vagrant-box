@@ -272,6 +272,7 @@ END
    fi
    nova image-create ubuntu 'Ubuntu 12.04 64bit Cartridge' 
    cartridge_image=$(nova image-list | grep 'Ubuntu 12.04 64bit Cartridge' | cut -d'|' -f2)
+   glance image-update $cartridge_image --is-public=true
 
    echo "Finished configuring the cartridge."
    echo "Note the cartridge id: $cartridge_image"
