@@ -1,58 +1,47 @@
-Stratos Runtime and Development Environments 
-============================================
+## Stratos Runtime and Development Environments 
 
-## Stratos Runtime Environment
+### Stratos Runtime Environment
 
-### Overview
+#### Overview
 
-This project contains scripts to automate the setup of Ubuntu 12.04 to support Stratos, and to also automate the setup of the Stratos runtime.  
-
-This environment also provides a local Cloudstack vagrant environment for those users who want minimal configuration of an IaaS to try out Stratos.
+This project contains scripts to automate the setup of Ubuntu 13.04 to support Stratos, and to also automate the setup of the Stratos runtime.  This environment can also setup a local Openstack environment for those users who want minimal configuration of an IaaS to try out Stratos.
 
 **WARNING:** This environment is a work-in-progress.  When it is ready for public use, a github release will be created.
 
-### Pre-requisites
+#### Pre-requisites
 
 This environment uses Vagrant [(download)](http://www.vagrantup.com/downloads.html) and Virtualbox [(download)](https://www.virtualbox.org/wiki/Downloads).
 
-Make sure you install Vagrant from the above link and not your distribution's vagrant package.
+**WARNING:** Make sure you install Vagrant from the above link and not your distribution's vagrant package.
 
 Tested with:
 
 - Vagrant 1.4.2
 - Virtualbox 4.3.8r92456
 
-### Usage
+#### Quick Start
 
-- Clone this project: ```git clone git@github.com:snowch/devcloud-script.git && cd devcloud-script```
-- If you want to use setup a local cloudstack environment for running stratos, see the section "Cloudstack Runtime", below.
-- Configure and start the "Stratos Runtime", see below.
+To setup stratos and openstack:
 
-#### Stratos Runtime ####
+- Clone this project: ```git clone git@github.com:snowch/devcloud-script.git```
+- Change into the project directory: ```cd devcloud-script```
+- Setup Stratos and Openstack: ```vagrant destroy -f && vagrant up && vagrant ssh -c "./stratos_dev.sh -f" && vagrant ssh -c "./openstack-qemu.sh -f"```.  This command:
+  - Configures a puppet master
+  - Checks out stratos
+  - Builds Stratos
+  - Installs Stratos
+  - Sets up Openstack
+  - Creates a Cartridge
+- Access Stratos Console: https://192.168.56.5:9443/console - admin/admin
+- Access Openstack Console: http://192.168.92.30 - admin/g
 
-- Start and Provision **Stratos** box:
+#### Issues
 
- - Edit the iaas.conf to point to your IaaS (only AWS is supported at the moment)
- - ```vagrant up stratos``` # starts the stratos box
- - ```vagrant provision stratos``` # copy the setup script to the guest
- - ```vagrant ssh stratos``` # log in to the stratos box
- - ```./stratos_dev.sh -h``` # show the stratos setup instructions
+- This environments will not work if you access the internet through a Proxy (transparent proxies should be ok).
 
+### Stratos Development Environment
 
-#### Cloudstack Runtime ####
-
-See [Cloudstack README](./README-cloudstack.md)
-
-### Todo
-
-- The final step of connecting Stratos to an IaaS has yet to be done!
-
-### Issues
-
-- Proxy setup has not been tested or documented
-
-
-## Stratos Development Environment
+You can also setup a Stratos development environment with eclipse.
 
 Ssh into your Stratos Runtime Environment and run this command:
 
