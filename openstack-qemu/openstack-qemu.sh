@@ -106,7 +106,7 @@ function devstack_setup() {
 
    cat > ${HOME}/devstack/localrc <<EOF
 HOST_IP=192.168.92.30
-FLOATING_RANGE=192.168.92.0/27
+FLOATING_RANGE=192.168.92.8/29
 FIXED_RANGE=10.11.12.0/24
 FIXED_NETWORK_SIZE=256
 FLAT_INTERFACE=eth2
@@ -118,7 +118,7 @@ SERVICE_PASSWORD=g
 SERVICE_TOKEN=g
 #SCHEDULER=nova.scheduler.filter_scheduler.FilterScheduler
 SCREEN_LOGDIR=\$DEST/logs/screen
-OFFLINE=$offline
+#OFFLINE=$offline
 EOF
 
    cd ${HOME}/devstack
@@ -186,8 +186,9 @@ function start_instance() {
 
    while : ; do
      status=$(nova list | grep 'ubuntu' | cut -d'|' -f4)
-     if [ $status == "ERROR" ]; then
-        echo "Error starting instance"
+     if [[ $status =~ (ERROR|SHUTOFF) ]]; then
+        echo "Error starting instance. Calling 'nova list':"
+        nova list | grep 'ubuntu' 
         exit -1
      elif [ $status == "ACTIVE" ]; then
         break
@@ -272,7 +273,23 @@ END
    fi
    nova image-create ubuntu 'Ubuntu 12.04 64bit Cartridge' 
    cartridge_image=$(nova image-list | grep 'Ubuntu 12.04 64bit Cartridge' | cut -d'|' -f2)
+
+   while : ; do
+     status=$(glance image-list | grep 'Ubuntu 12.04 64bit Cartridge' | cut -d'|' -f7)
+     if [ $status == "active" ]; then
+        break
+     fi
+     echo "Waiting for the instance image upload to complete.  Status is: " $status
+     sleep 10s
+   done
+   echo "Image has been uploaded"
+
+   # make image public
    glance image-update $cartridge_image --is-public=true
+
+   # shut off the instance - we don't need it now
+   nova stop ubuntu
+   nova delete ubuntu
 
    echo "Finished configuring the cartridge."
    echo "Note the cartridge id: $cartridge_image"
