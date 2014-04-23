@@ -4,9 +4,7 @@
 
 #### Overview
 
-This project contains scripts to automate the setup of Ubuntu 13.04 to support Stratos, and to also automate the setup of the Stratos runtime.  This environment can also setup a local Openstack environment for those users who want minimal configuration of an IaaS to try out Stratos.
-
-**WARNING:** This environment is a work-in-progress.  When it is ready for public use, a github release will be created.
+This project contains scripts to automate the setup of Ubuntu 13.04 to support Stratos, and to also automate the setup of puppet and the Stratos runtime.  This environment can also setup a local Openstack environment for those users who want minimal configuration of an IaaS to try out Stratos.
 
 #### Pre-requisites
 
@@ -23,33 +21,22 @@ Tested with:
 
 To setup stratos and openstack:
 
+- Install Vagrant using the above link
+- Install Virtualbox using the above link
 - Clone this project: ```git clone git@github.com:snowch/devcloud-script.git```
 - Change into the project directory: ```cd devcloud-script```
-- Setup Stratos and Openstack: ```vagrant destroy -f && vagrant up && vagrant ssh -c "./stratos_dev.sh -f" && vagrant ssh -c "./openstack-qemu.sh -f"```.  This command:
-  - Configures a puppet master
-  - Checks out stratos
-  - Builds Stratos
-  - Installs Stratos
-  - Sets up Openstack
-  - Creates a Cartridge
+- Run either:
+  - ```./vagrant_developer_env_setup.sh``` (unix/cygwin)
+  - ```vagrant_developer_env_setup.bat``` (windows)
 - Access Stratos Console: https://192.168.56.5:9443/console - admin/admin
 - Access Openstack Console: http://192.168.92.30 - admin/g
+- Login to your development environment using rdesktop (*nix) or Remote Desktop Connection (windows):
+ - Host: 192.168.56.5
+ - Port: 3389
+ - Username: vagrant
+ - Password: vagrant
 
 #### Issues
 
 - This environments will not work if you access the internet through a Proxy (transparent proxies should be ok).
 
-### Stratos Development Environment
-
-You can also setup a Stratos development environment with eclipse.
-
-Ssh into your Stratos Runtime Environment and run this command:
-
- - ```./stratos_dev.sh -d``` # sets up ubuntu desktop + eclipse and imports Stratos source code
-
-Login to your development environment using rdesktop (*nix) or Remote Desktop Connection (windows):
-
- - Host: 192.168.56.5
- - Port: 3389
- - Username: vagrant
- - Password: vagrant
