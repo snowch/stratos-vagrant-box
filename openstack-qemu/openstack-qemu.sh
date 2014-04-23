@@ -35,13 +35,13 @@ function finish {
 trap finish SIGINT
 
 function main() {
-  while getopts 'fodih' flag; do
+  while getopts 'fodch' flag; do
     progarg=${flag}
     case "${flag}" in
       f) full_setup; exit $? ;;
       o) devstack_setup "True"; exit $? ;;
       d) devstack_setup "False"; exit $? ;;
-      i) start_instance; exit $? ;;
+      c) create_cartridge; exit $? ;;
       h) usage ; exit $? ;;
       \?) usage ; exit $? ;;
       *) usage ; exit $? ;;
@@ -52,19 +52,23 @@ function main() {
 
 function usage () {
    cat <<EOF
-Usage: $progname -[f|o|d|i|h]
+Usage: $progname -[f|o|d|c|h]
 
 Where:
 
-    -f perform a complete setup of the openstack runtime environment
+    -f Perform a complete online setup of openstack and create a cartridge
+       This command is the equivalent of running:
 
-    -o perform a complete offline setup of the runtime environment
+       $progname -d && $progname -c
 
-    -d perform devstack setup
+    -d Perform a complete online setup of openstack
 
-    -i setup images and start instance
+    -o Perform a complete offline setup of the runtime environment
+       (online setup needs to have been done at least once first) 
 
-    -h show this help message
+    -c Create cartridge
+
+    -h Show this help message
 
 All commands can be re-run as often as required.
 EOF
@@ -73,7 +77,7 @@ EOF
 
 function full_setup() {
    devstack_setup
-   start_instance
+   create_cartridge
 }
 
 function devstack_setup() {
@@ -91,7 +95,6 @@ function devstack_setup() {
    sudo sysctl -w net.ipv4.ip_forward=1
    # TODO make this change permanent
    sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-
 
    sudo apt-get update
    sudo apt-get install -y git
@@ -135,7 +138,7 @@ EOF
    popd
 }
 
-function start_instance() {
+function create_cartridge() {
 
    pushd $PWD
 
@@ -166,7 +169,7 @@ function start_instance() {
      glance image-create --name "Ubuntu 12.04 64bit" --is-public true --disk-format qcow2 --container-format bare --file /home/vagrant/precise-server-cloudimg-amd64-disk1.img
    fi
 
-   # FIXME: make this idempotent
+   # FIXME: make this idempotent - import pre-made keypair
    if [ ! -e openstack-demo-keypair.pem ]
    then
      nova keypair-add "openstack-demo-keypair" > openstack-demo-keypair.pem
@@ -199,25 +202,28 @@ function start_instance() {
    echo "Instance has started ..."
 
    instance_ip=$(nova list | grep 'ubuntu' | cut -d'|' -f7 | cut -d= -f2)
-   echo "Connect using: "
-   echo "ssh -i openstack-demo-keypair.pem ubuntu@$instance_ip"
+   echo "You can connect using: "
+   echo "  ssh -i openstack-demo-keypair.pem ubuntu@$instance_ip"
 
-   # wait for the guest to start
+   # wait for the guest OS and ssh server to start
+   # FIXME:  implement a proper polling mechanism to check for successful startup
    sleep 3m 
-   ping -c1 $instance_ip
-
-#set +u
 
 CMDS=$(cat <<"CMD"
 
 url='https://git-wip-us.apache.org/repos/asf?p=incubator-stratos.git;a=blob_plain;f=tools/puppet3-agent'
 sudo bash -x -c "
+# fail on error
+set -u
 
 echo \"export LC_ALL=\"en_US.UTF-8\"\" >> /root/.bashrc
 source /root/.bashrc
 
 apt-get update
-apt-get install -y zip unzip expect
+# installing together has been unreliable
+apt-get install -y zip
+apt-get install -y unzip 
+apt-get install -y expect
 
 if [ -e /root/bin ]; then
   rm -rf /root/bin
@@ -242,6 +248,11 @@ CMD
 
    echo "Starting to configure the cartridge"
    ssh -oStrictHostKeyChecking=no -i openstack-demo-keypair.pem ubuntu@$instance_ip -t "$CMDS"
+
+   nova reboot --poll ubuntu
+   # wait for the guest OS and ssh server to start
+   # FIXME:  implement a proper polling mechanism to check for successful startup
+   sleep 3m 
 
 EXPECT_SCRIPT=$(cat <<END
 #!/usr/bin/expect
@@ -271,6 +282,8 @@ END
      echo "Found an old cartridge image so deleting it."
      nova image-delete $cartridge_image
    fi
+
+   # TODO use --poll option to remove need for while loop
    nova image-create ubuntu 'Ubuntu 12.04 64bit Cartridge' 
    cartridge_image=$(nova image-list | grep 'Ubuntu 12.04 64bit Cartridge' | cut -d'|' -f2)
 
