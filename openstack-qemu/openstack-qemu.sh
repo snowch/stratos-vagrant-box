@@ -142,6 +142,9 @@ function create_cartridge() {
 
    pushd $PWD
 
+   sudo apt-get update
+   sudo apt-get install -y nmap
+
    set +u
    . ${DEVSTACK_HOME}/openrc admin admin
    set -u
@@ -206,18 +209,29 @@ function create_cartridge() {
    echo "  ssh -i openstack-demo-keypair.pem ubuntu@$instance_ip"
 
    # wait for the guest OS and ssh server to start
-   # FIXME:  implement a proper polling mechanism to check for successful startup
-   sleep 3m 
+   count=0
+   until [ $(nmap --open -p 22 $instance_ip |grep -c "ssh") -eq 1 ]
+   do 
+     let "count=count+1"
+     if [ $count -eq 100 ]
+     then
+       echo "Retry count failed waiting for ssh to $instance_ip"
+       exit 1
+     fi
+     sleep 10s 
+     echo "Waiting for ssh connection to $instance_ip"
+   done 
 
 CMDS=$(cat <<"CMD"
 
 url='https://git-wip-us.apache.org/repos/asf?p=incubator-stratos.git;a=blob_plain;f=tools/puppet3-agent'
 sudo bash -x -c "
-# fail on error
-set -u
 
 echo \"export LC_ALL=\"en_US.UTF-8\"\" >> /root/.bashrc
 source /root/.bashrc
+
+# fail on error
+set -u
 
 apt-get update
 # installing together has been unreliable
@@ -250,9 +264,21 @@ CMD
    ssh -oStrictHostKeyChecking=no -i openstack-demo-keypair.pem ubuntu@$instance_ip -t "$CMDS"
 
    nova reboot --poll ubuntu
+   instance_ip=$(nova list | grep 'ubuntu' | cut -d'|' -f7 | cut -d= -f2)
    # wait for the guest OS and ssh server to start
-   # FIXME:  implement a proper polling mechanism to check for successful startup
-   sleep 3m 
+   # TODO refactor this duplicated code to a function
+   count=0
+   until [ $(nmap --open -p 22 $instance_ip |grep -c "ssh") -eq 1 ]
+   do 
+     let "count=count+1"
+     if [ $count -eq 100 ]
+     then
+       echo "Retry count failed waiting for ssh to $instance_ip"
+       exit 1
+     fi
+     sleep 10s 
+     echo "Waiting for ssh connection to $instance_ip"
+   done 
 
 EXPECT_SCRIPT=$(cat <<END
 #!/usr/bin/expect
