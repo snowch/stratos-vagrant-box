@@ -249,7 +249,7 @@ export count=0
 until [ \$(apt-get install -y zip unzip expect) -eq 0 ]
 do 
   let \"count=count+1\"
-  if [ \$count -eq 100 ]
+  if [ \$count -eq 20 ]
   then
     echo 'Retry count failed trying to install packages.'
     exit 1
