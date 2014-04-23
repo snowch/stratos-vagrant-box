@@ -22,6 +22,9 @@ set -u
 DEVSTACK_HOME=${HOME}/devstack
 STRATOS_BASE=${HOME}/stratosbase
 
+BASE_IMAGE_NAME='Ubuntu 12.04 64bit'
+CARTRIDGE_IMAGE_NAME='Ubuntu 12.04 64bit Cartridge'
+
 progname=$0
 progdir=$(dirname $progname)
 progdir=$(cd $progdir && pwd -P || echo $progdir)
@@ -149,6 +152,14 @@ function create_cartridge() {
    . ${DEVSTACK_HOME}/openrc admin admin
    set -u
 
+   # remove any left-over instances from previous runs
+   echo "Cleaning up from previous runs."
+   set +e
+   nova delete 'ubuntu'
+   nova image-delete "$BASE_IMAGE_NAME"
+   nova image-delete "$CARTRIDGE_IMAGE_NAME"
+   set -e
+
    if ! $(nova secgroup-list-rules default | grep -q 'tcp'); then
      nova secgroup-add-rule default tcp 22 22 0.0.0.0/0
    fi
@@ -165,18 +176,16 @@ function create_cartridge() {
    echo "Finished Ubuntu image download"
 
    # check we haven't already added the image
-   image=$(nova image-list | grep 'Ubuntu 12.04 64bit' | cut -d'|' -f2)
+   image=$(nova image-list | grep "$BASE_IMAGE_NAME" | cut -d'|' -f2)
 
    if [ -z "$image" ]
    then
-     glance image-create --name "Ubuntu 12.04 64bit" --is-public true --disk-format qcow2 --container-format bare --file /home/vagrant/precise-server-cloudimg-amd64-disk1.img
+     glance image-create --name "$BASE_IMAGE_NAME" --is-public true --disk-format qcow2 --container-format bare --file /home/vagrant/precise-server-cloudimg-amd64-disk1.img
    fi
 
-   # FIXME: make this idempotent - import pre-made keypair
-   if [ ! -e openstack-demo-keypair.pem ]
-   then
-     nova keypair-add "openstack-demo-keypair" > openstack-demo-keypair.pem
+   if ! $(nova keypair-list | grep -q 'openstack-demo-keypair'); then
      chmod 600 openstack-demo-keypair.pem
+     nova keypair-add --pub_key openstack-demo-keypair.pem 'openstack-demo-keypair'
    fi
 
    if [[ -z $(nova flavor-list | grep 'm1.cartridge') ]]; then
@@ -186,7 +195,7 @@ function create_cartridge() {
    if ! (nova list | grep -q ubuntu); then
      # start an instance
      flavor=$(nova flavor-list | grep 'm1.cartridge' | cut -d'|' -f2)
-     image=$(nova image-list | grep 'Ubuntu 12.04 64bit' | cut -d'|' -f2)
+     image=$(nova image-list | grep "$BASE_IMAGE_NAME" | cut -d'|' -f2)
      nova boot --flavor $flavor --key-name openstack-demo-keypair --image $image ubuntu
    fi
 
@@ -204,9 +213,10 @@ function create_cartridge() {
    done
    echo "Instance has started ..."
 
-   instance_ip=$(nova list | grep 'ubuntu' | cut -d'|' -f7 | cut -d= -f2)
-   echo "You can connect using: "
-   echo "  ssh -i openstack-demo-keypair.pem ubuntu@$instance_ip"
+   instance_ip=$(nova list | grep 'ubuntu' | cut -d'|' -f7 | cut -d= -f2 | tr -d ' ')
+   # clear previous known_hosts entries
+   ssh-keygen -f "/home/vagrant/.ssh/known_hosts" -R 10.11.12.2
+   echo "You can connect using: 'ssh -i openstack-demo-keypair.pem ubuntu@$instance_ip'"
 
    # wait for the guest OS and ssh server to start
    count=0
@@ -215,11 +225,11 @@ function create_cartridge() {
      let "count=count+1"
      if [ $count -eq 100 ]
      then
-       echo "Retry count failed waiting for ssh to $instance_ip"
+       echo "Retry count failed waiting for ssh on $instance_ip"
        exit 1
      fi
      sleep 10s 
-     echo "Waiting for ssh connection to $instance_ip"
+     echo "Waiting for ssh port to open on $instance_ip"
    done 
 
 CMDS=$(cat <<"CMD"
@@ -227,17 +237,26 @@ CMDS=$(cat <<"CMD"
 url='https://git-wip-us.apache.org/repos/asf?p=incubator-stratos.git;a=blob_plain;f=tools/puppet3-agent'
 sudo bash -x -c "
 
+# fail on error
+set -e
+
 echo \"export LC_ALL=\"en_US.UTF-8\"\" >> /root/.bashrc
 source /root/.bashrc
 
-# fail on error
-set -u
-
 apt-get update
-# installing together has been unreliable
-apt-get install -y zip
-apt-get install -y unzip 
-apt-get install -y expect
+
+export count=0
+until [ \$(apt-get install -y zip unzip expect) -eq 0 ]
+do 
+  let \"count=count+1\"
+  if [ \$count -eq 100 ]
+  then
+    echo 'Retry count failed trying to install packages.'
+    exit 1
+  fi
+  sleep 10s 
+  echo 'Failed to install packages.  Retrying.'
+done 
 
 if [ -e /root/bin ]; then
   rm -rf /root/bin
@@ -246,13 +265,13 @@ fi
 mkdir -p /root/bin
 cd /root/bin
 
-wget '${url}/config.sh;hb=HEAD' -O config.sh
-wget '${url}/init.sh;hb=HEAD' -O init.sh
+wget -nv '${url}/config.sh;hb=HEAD' -O config.sh
+wget -nv '${url}/init.sh;hb=HEAD' -O init.sh
 chmod +x config.sh
 chmod +x init.sh
 mkdir -p /root/bin/puppetinstall
-wget '${url}/puppetinstall/puppetinstall;hb=HEAD' -O puppetinstall/puppetinstall
-wget '${url}/stratos_sendinfo.rb;hb=HEAD' -O stratos_sendinfo.rb
+wget -nv '${url}/puppetinstall/puppetinstall;hb=HEAD' -O puppetinstall/puppetinstall
+wget -nv '${url}/stratos_sendinfo.rb;hb=HEAD' -O stratos_sendinfo.rb
 chmod +x puppetinstall/puppetinstall
 
 sed -i 's:^TIMEZONE=.*$:TIMEZONE=\"Etc/UTC\":g' /root/bin/puppetinstall/puppetinstall
@@ -280,7 +299,7 @@ CMD
      echo "Waiting for ssh connection to $instance_ip"
    done 
 
-EXPECT_SCRIPT=$(cat <<END
+EXPECT_SCRIPT=$(cat <<'END'
 #!/usr/bin/expect
 set timeout -1
 spawn /root/bin/config.sh
@@ -293,6 +312,9 @@ send "192.168.56.5\r"
 expect "Please provide puppet master hostname *"
 send "puppet.stratos.com\r"
 expect eof
+# catch errors and return to caller
+catch wait result
+exit [lindex $result 3]
 END
 ) 
 
@@ -301,7 +323,7 @@ END
    ssh -oStrictHostKeyChecking=no -i openstack-demo-keypair.pem ubuntu@$instance_ip "sudo expect /home/ubuntu/config.exp"
 
 
-   cartridge_image=$(nova image-list | grep 'Ubuntu 12.04 64bit Cartridge' | cut -d'|' -f2)
+   cartridge_image=$(nova image-list | grep "$CARTRIDGE_IMAGE_NAME" | cut -d'|' -f2)
 
    if [ ! -z "$cartridge_image" ]
    then
@@ -310,11 +332,11 @@ END
    fi
 
    # TODO use --poll option to remove need for while loop
-   nova image-create ubuntu 'Ubuntu 12.04 64bit Cartridge' 
-   cartridge_image=$(nova image-list | grep 'Ubuntu 12.04 64bit Cartridge' | cut -d'|' -f2)
+   nova image-create ubuntu "$CARTRIDGE_IMAGE_NAME" 
+   cartridge_image=$(nova image-list | grep "$CARTRIDGE_IMAGE_NAME" | cut -d'|' -f2)
 
    while : ; do
-     status=$(glance image-list | grep 'Ubuntu 12.04 64bit Cartridge' | cut -d'|' -f7)
+     status=$(glance image-list | grep "$CARTRIDGE_IMAGE_NAME" | cut -d'|' -f7)
      if [ $status == "active" ]; then
         break
      fi
