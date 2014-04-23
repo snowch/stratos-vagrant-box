@@ -38,5 +38,5 @@ To setup stratos and openstack:
 
 #### Issues
 
-- This environments will not work if you access the internet through a Proxy (transparent proxies should be ok).
+- This environment will not work if you access the internet through a Proxy (transparent proxies should be ok).
 
