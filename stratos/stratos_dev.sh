@@ -545,13 +545,24 @@ function development_environment() {
 
    echo -e "\e[32mSetting up development environment.\e[39m"
 
+   # make sure stratos isn't running because it will block the jvm debugger
+   $progname -k
+   while ./stratos_dev.sh -t | grep -q 'Stratos is running' ;  do 
+     echo 'Waiting for Stratos to stop running.'; 
+     sleep 10s; 
+   done
+
    pushd $PWD
    sudo apt-get install -y --no-install-recommends lubuntu-desktop eclipse-jdt xvfb lxde firefox
    sudo apt-get install -y --no-install-recommends vnc4server xrdp
 
+
    echo lxsession > ~/.xsession
 
+   echo 'mode: off' > ~/.xscreensaver
+
    cd $STRATOS_SOURCE_PATH
+   echo "Running 'mvn eclipse:eclipse'"
    mvn -q eclipse:eclipse
 
    # import projects

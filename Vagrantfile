@@ -37,7 +37,8 @@ Vagrant.configure("2") do |config|
     #config.vm.box = "opscode-ubuntu-12.04-32"
     #config.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-12.04-i386_chef-provisionerless.box"   
 
-    config.vm.hostname = "paas.stratos.com"
+    # puppetinstall scripts hardcode the guest name to 'puppet.$DOMAIN' so lets keep with that
+    config.vm.hostname = "puppet.stratos.com"
     
     # put stratos on the same private network as cloudstack so they can talk to each other
     config.vm.network :private_network, :ip => STRATOS_IP
@@ -49,7 +50,7 @@ Vagrant.configure("2") do |config|
     # end
 
     # make the stratos setup script available in the /home/vagrant folder
-    config.vm.provision "shell", inline: "ln -sf /vagrant/stratos_dev.sh /home/vagrant/stratos_dev.sh", privileged: false
+    config.vm.provision "shell", inline: "ln -sf /vagrant/stratos/stratos_dev.sh /home/vagrant/stratos_dev.sh", privileged: false
     config.vm.provision "shell", inline: "[ -e iaas.conf ] || cp /vagrant/iaas.conf.example /home/vagrant/iaas.conf && sed -i '1,2d' iaas.conf", privileged: false
     config.vm.provision "shell", inline: "ln -sf /vagrant/openstack-docker/openstack-docker.sh /home/vagrant/openstack-docker.sh", privileged: false
     config.vm.provision "shell", inline: "ln -sf /vagrant/openstack-qemu/openstack-qemu.sh /home/vagrant/openstack-qemu.sh", privileged: false
@@ -61,5 +62,18 @@ Vagrant.configure("2") do |config|
       # v.gui = true
       # v.customize ["modifyvm", :id, "--clipboard", "bidirectional"]
     end
+
+    # If you want to customise the Vagrantfile just for your environment, try
+    # putting your customisations in Vagrantfile.extensions
+    # 
+    # For example, I use it to join my LAN network when running vagrant on a server
+    #   config.vm.network "public_network"
+    begin
+      eval(File.open("Vagrantfile.extensions").read)
+      puts "Loaded Vagrantfile.extensions"
+    rescue
+      # do nothing
+    end
+
 
 end
