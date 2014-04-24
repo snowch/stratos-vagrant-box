@@ -529,10 +529,11 @@ function kill_servers() {
     echo 'Waiting for Stratos to stop running.'
     let "count=count+1"
     if [[ $count -eq 20 ]]; then
-      kill $stratos_pid
+      kill -SIGKILL $stratos_pid
       break
     fi 
     sleep 10s
+    kill -SIGINT $stratos_pid
   done
 
   echo "Servers stopped."
@@ -643,6 +644,9 @@ function development_environment() {
    fi
 
    mvn -Declipse.workspace=${HOME}/workspace/ eclipse:configure-workspace
+
+   # start the servers again
+   $progname -s
    popd
 }
 
