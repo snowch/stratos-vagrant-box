@@ -545,6 +545,12 @@ function development_environment() {
 
    echo -e "\e[32mSetting up development environment.\e[39m"
 
+   if [ ! -d ${STRATOS_PATH} ]
+   then
+     echo "It appears that Stratos has not been installed yet, so quitting."
+     exit 1
+   fi
+
    # make sure stratos isn't running because it will block the jvm debugger
    $progname -k
    while ./stratos_dev.sh -t | grep -q 'Stratos is running' ;  do 
