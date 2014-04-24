@@ -523,6 +523,9 @@ function kill_servers() {
   $STRATOS_PATH/apache-activemq-5.9.1/bin/activemq stop > /dev/null 2>&1
 
   stratos_pid=$(cat $STRATOS_PATH/apache-stratos-default/wso2carbon.pid)
+  
+  # ignore errors
+  trap - ERR
 
   count=0
   while ( $progname -t | grep -q 'Stratos is running' );  do 
@@ -535,6 +538,9 @@ function kill_servers() {
     sleep 10s
     kill -SIGINT $stratos_pid
   done
+
+  # turn error handling back on
+  trap 'error ${LINENO}' ERR
 
   echo "Servers stopped."
   echo "  Check status using $progname -t"
