@@ -312,7 +312,8 @@ function puppet_base_setup() {
 
   echo 'Downloading Oracle JDK'
 
-  set +e
+  # Oracle download is so unreliable we need to be a bit more informative with the error feedback
+  trap - ERR
   sudo wget -nv -c -P /etc/puppet/modules/java/files \
             --no-cookies --no-check-certificate \
             --header "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie" \
@@ -323,7 +324,7 @@ function puppet_base_setup() {
     echo "Failed to download Oracle JDK.  Please retry later."
     exit 1
   fi
-  set -e
+  trap 'error ${LINENO}' ERR
 
   # add unqualified hostname to /etc/hosts because that isn't done by puppetinstall
   sudo sed -i -e "s@puppet.${DOMAINNAME}\s*\$@puppet.${DOMAINNAME} puppet@g" /etc/hosts
