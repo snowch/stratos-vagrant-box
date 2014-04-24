@@ -185,7 +185,8 @@ function create_cartridge() {
 
    if ! $(nova keypair-list | grep -q 'openstack-demo-keypair'); then
      chmod 600 openstack-demo-keypair.pem
-     nova keypair-add --pub_key openstack-demo-keypair.pem 'openstack-demo-keypair'
+     ssh-keygen -f openstack-demo-keypair.pem -y > openstack-demo-keypair.pub
+     nova keypair-add --pub_key openstack-demo-keypair.pub 'openstack-demo-keypair'
    fi
 
    if [[ -z $(nova flavor-list | grep 'm1.cartridge') ]]; then
@@ -215,7 +216,10 @@ function create_cartridge() {
 
    instance_ip=$(nova list | grep 'ubuntu' | cut -d'|' -f7 | cut -d= -f2 | tr -d ' ')
    # clear previous known_hosts entries
-   ssh-keygen -f "/home/vagrant/.ssh/known_hosts" -R 10.11.12.2
+   if [ -e "${HOME}/.ssh/known_hosts" ] 
+   then
+     ssh-keygen -f "${HOME}/.ssh/known_hosts" -R $instance_ip
+   fi
    echo "You can connect using: 'ssh -i openstack-demo-keypair.pem ubuntu@$instance_ip'"
 
    # wait for the guest OS and ssh server to start
@@ -228,7 +232,7 @@ function create_cartridge() {
        echo "Retry count failed waiting for ssh on $instance_ip"
        exit 1
      fi
-     sleep 10s 
+     sleep 20s 
      echo "Waiting for ssh port to open on $instance_ip"
    done 
 
@@ -244,19 +248,30 @@ echo \"export LC_ALL=\"en_US.UTF-8\"\" >> /root/.bashrc
 source /root/.bashrc
 
 apt-get update
+apt-get upgrade -y
 
-export count=0
-until [ \$(apt-get install -y zip unzip expect) -eq 0 ]
-do 
+set +e
+apt-get install -y zip unzip expect
+result=\$?
+
+count=0
+until [ \$result -eq 0 ]
+do
   let \"count=count+1\"
   if [ \$count -eq 20 ]
   then
     echo 'Retry count failed trying to install packages.'
     exit 1
   fi
-  sleep 10s 
+  sleep 10s
   echo 'Failed to install packages.  Retrying.'
-done 
+  apt-get update
+  apt-get install -y zip
+  apt-get install -y unzip
+  apt-get install -y expect
+  result=\$?
+done
+set -e
 
 if [ -e /root/bin ]; then
   rm -rf /root/bin

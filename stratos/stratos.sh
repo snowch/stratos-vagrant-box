@@ -522,6 +522,19 @@ function kill_servers() {
 
   $STRATOS_PATH/apache-activemq-5.9.1/bin/activemq stop > /dev/null 2>&1
 
+  stratos_pid=$(cat $STRATOS_PATH/apache-stratos-default/wso2carbon.pid)
+
+  count=0
+  while ( $progname -t | grep -q 'Stratos is running' );  do 
+    echo 'Waiting for Stratos to stop running.'
+    let "count=count+1"
+    if [[ $count -eq 20 ]]; then
+      kill $stratos_pid
+      break
+    fi 
+    sleep 10s
+  done
+
   echo "Servers stopped."
   echo "  Check status using $progname -t"
   echo "  Start again using $progname -s"
@@ -534,9 +547,13 @@ function servers_status() {
 
   $STRATOS_PATH/apache-activemq-5.9.1/bin/activemq status | tail -1
 
+  # find the stratos pid
   stratos_pid=$(cat $STRATOS_PATH/apache-stratos-default/wso2carbon.pid)
+
+  # check all java running process pids
   java_pids=$(pgrep -u $(whoami) -f java)
 
+  # if there is process running for statos 
   echo $java_pids | grep -q "$stratos_pid"
   if [ $? -eq 0 ]
   then
@@ -552,6 +569,8 @@ function servers_status() {
 
 function development_environment() {
 
+   pushd $PWD
+
    echo -e "\e[32mSetting up development environment.\e[39m"
 
    if [ ! -d ${STRATOS_PATH} ]
@@ -562,12 +581,9 @@ function development_environment() {
 
    # make sure stratos isn't running because it will block the jvm debugger
    $progname -k
-   while ./stratos_dev.sh -t | grep -q 'Stratos is running' ;  do 
-     echo 'Waiting for Stratos to stop running.'; 
-     sleep 10s; 
-   done
 
-   pushd $PWD
+   sudo apt-get update
+   sudo apt-get upgrade -y
    sudo apt-get install -y --no-install-recommends lubuntu-desktop eclipse-jdt xvfb lxde firefox
    sudo apt-get install -y --no-install-recommends vnc4server xrdp
 

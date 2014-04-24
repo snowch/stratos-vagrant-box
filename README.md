@@ -26,8 +26,8 @@ To setup stratos and openstack:
 - Clone this project: ```git clone git@github.com:snowch/devcloud-script.git```
 - Change into the project directory: ```cd devcloud-script```
 - Run either:
-  - ```./vagrant_developer_env_setup.sh``` (unix/cygwin)
-  - ```vagrant_developer_env_setup.bat``` (windows)
+  - ```./stratos_developer_env_setup.sh``` (unix/cygwin)
+  - ```stratos_developer_env_setup.bat``` (windows)
 - Access Stratos Console: https://192.168.56.5:9443/console - admin/admin
 - Access Openstack Console: http://192.168.92.30 - admin/g
 - Login to your development environment using rdesktop (*nix) or Remote Desktop Connection (windows):

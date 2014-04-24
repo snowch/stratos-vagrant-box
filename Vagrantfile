@@ -50,11 +50,20 @@ Vagrant.configure("2") do |config|
     # end
 
     # make the stratos setup script available in the /home/vagrant folder
-    config.vm.provision "shell", inline: "ln -sf /vagrant/stratos/stratos_dev.sh /home/vagrant/stratos_dev.sh", privileged: false
-    config.vm.provision "shell", inline: "[ -e iaas.conf ] || cp /vagrant/iaas.conf.example /home/vagrant/iaas.conf && sed -i '1,2d' iaas.conf", privileged: false
-    config.vm.provision "shell", inline: "ln -sf /vagrant/openstack-docker/openstack-docker.sh /home/vagrant/openstack-docker.sh", privileged: false
-    config.vm.provision "shell", inline: "ln -sf /vagrant/openstack-qemu/openstack-qemu.sh /home/vagrant/openstack-qemu.sh", privileged: false
-    config.vm.provision "shell", inline: "ln -sf /vagrant/openstack-qemu/openstack-demo-keypair.pem /home/vagrant/openstack-demo-keypair.pem", privileged: false
+    config.vm.provision "shell", 
+      inline: "ln -sf /vagrant/stratos/stratos.sh /home/vagrant/stratos.sh", privileged: false
+
+    config.vm.provision "shell", 
+      inline: "[ -e iaas.conf ] || cp /vagrant/iaas.conf.example /home/vagrant/iaas.conf && sed -i '1,2d' iaas.conf", privileged: false
+
+    config.vm.provision "shell", 
+      inline: "ln -sf /vagrant/openstack-docker/openstack-docker.sh /home/vagrant/openstack-docker.sh", privileged: false
+
+    config.vm.provision "shell", 
+      inline: "ln -sf /vagrant/openstack-qemu/openstack-qemu.sh /home/vagrant/openstack-qemu.sh", privileged: false
+
+    config.vm.provision "shell", 
+      inline: "ln -sf /vagrant/openstack-qemu/openstack-demo-keypair.pem /home/vagrant/openstack-demo-keypair.pem", privileged: false
 
     config.vm.provider "virtualbox" do |v|
       v.customize ["modifyvm", :id, "--memory", 5120 ]
