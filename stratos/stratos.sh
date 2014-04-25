@@ -63,8 +63,8 @@ HAWTBUF_URL="http://repo1.maven.org/maven2/org/fusesource/hawtbuf/hawtbuf/1.2/ha
 # You should not need to change anything below this line
 ########################################################
 
-if ! egrep -q "Ubuntu (12.04|13.04)" /etc/issue; then
-  echo "WARNING: This script has only been tested on Ubuntu 12.04 and 13.04"
+if ! egrep -q "Ubuntu (12.04|13.04|13.10)" /etc/issue; then
+  echo "WARNING: This script has only been tested on Ubuntu 12.04, 13.04 and 13.10"
   read -p "Press [Enter] key to continue (CTRL-C to quit)..."  
   clear
 fi
@@ -651,9 +651,10 @@ function development_environment() {
 
    mvn -Declipse.workspace=${HOME}/workspace/ eclipse:configure-workspace
 
+   popd
+
    # start the servers again
    $progname -s
-   popd
 }
 
 function checkout() {
