@@ -30,8 +30,8 @@ Vagrant.configure("2") do |config|
     # config.vm.box = "opscode-ubuntu-12.04-64"
     # config.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-12.04_chef-provisionerless.box"
 
-    config.vm.box = "opscode-ubuntu-13.04-64"
-    config.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-13.04_chef-provisionerless.box"
+    config.vm.box = "opscode-ubuntu-13.10-64"
+    config.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-13.10_chef-provisionerless.box"
 
     # 32 bit machine
     #config.vm.box = "opscode-ubuntu-12.04-32"

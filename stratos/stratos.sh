@@ -587,7 +587,7 @@ function development_environment() {
    fi
 
    # make sure stratos isn't running because it will block the jvm debugger
-   $progname -k
+   kill_servers
 
    sudo apt-get update
    sudo apt-get upgrade -y
@@ -654,7 +654,7 @@ function development_environment() {
    popd
 
    # start the servers again
-   $progname -s
+   start_servers
 }
 
 function checkout() {

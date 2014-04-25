@@ -197,22 +197,8 @@ function create_cartridge() {
      # start an instance
      flavor=$(nova flavor-list | grep 'm1.cartridge' | cut -d'|' -f2)
      image=$(nova image-list | grep "$BASE_IMAGE_NAME" | cut -d'|' -f2)
-     nova boot --flavor $flavor --key-name openstack-demo-keypair --image $image ubuntu
+     nova boot --flavor $flavor --key-name openstack-demo-keypair --image $image --poll ubuntu
    fi
-
-   while : ; do
-     status=$(nova list | grep 'ubuntu' | cut -d'|' -f4)
-     if [[ $status =~ (ERROR|SHUTOFF) ]]; then
-        echo "Error starting instance. Calling 'nova list':"
-        nova list | grep 'ubuntu' 
-        exit -1
-     elif [ $status == "ACTIVE" ]; then
-        break
-     fi
-     echo "Waiting for the instance to startup. Current status is: " $status
-     sleep 10s
-   done
-   echo "Instance has started ..."
 
    instance_ip=$(nova list | grep 'ubuntu' | cut -d'|' -f7 | cut -d= -f2 | tr -d ' ')
    # clear previous known_hosts entries
@@ -236,6 +222,8 @@ function create_cartridge() {
      echo "Waiting for ssh port to open on $instance_ip"
    done 
 
+   echo "Ssh port open on $instance_ip"
+
 CMDS=$(cat <<"CMD"
 
 url='https://git-wip-us.apache.org/repos/asf?p=incubator-stratos.git;a=blob_plain;f=tools/puppet3-agent'
@@ -250,7 +238,10 @@ source /root/.bashrc
 apt-get update
 apt-get upgrade -y
 
+# installing packages has been unreliable, so switch
+# off error handling and retry the install
 set +e
+
 apt-get install -y zip unzip expect
 result=\$?
 
@@ -346,19 +337,8 @@ END
      nova image-delete $cartridge_image
    fi
 
-   # TODO use --poll option to remove need for while loop
-   nova image-create ubuntu "$CARTRIDGE_IMAGE_NAME" 
+   nova image-create --poll ubuntu "$CARTRIDGE_IMAGE_NAME" 
    cartridge_image=$(nova image-list | grep "$CARTRIDGE_IMAGE_NAME" | cut -d'|' -f2)
-
-   while : ; do
-     status=$(glance image-list | grep "$CARTRIDGE_IMAGE_NAME" | cut -d'|' -f7)
-     if [ $status == "active" ]; then
-        break
-     fi
-     echo "Waiting for the instance image upload to complete.  Status is: " $status
-     sleep 10s
-   done
-   echo "Image has been uploaded"
 
    # make image public
    glance image-update $cartridge_image --is-public=true
@@ -369,8 +349,6 @@ END
 
    echo "Finished configuring the cartridge."
    echo "Note the cartridge id: $cartridge_image"
-
-#set -u
 
    popd
 }

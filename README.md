@@ -4,7 +4,7 @@
 
 #### Overview
 
-This project contains scripts to automate the setup of Ubuntu 13.04 to support Stratos, and to also automate the setup of puppet and the Stratos runtime.  This environment can also setup a local Openstack environment for those users who want minimal configuration of an IaaS to try out Stratos.
+This project contains scripts to automate the setup of Ubuntu 13.10 to support Stratos, and to also automate the setup of puppet and the Stratos runtime.  This environment can also setup a local Openstack environment for those users who want minimal configuration of an IaaS to try out Stratos.
 
 #### Pre-requisites
 
