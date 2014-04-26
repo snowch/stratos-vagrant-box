@@ -22,8 +22,10 @@ set -u
 DEVSTACK_HOME=${HOME}/devstack
 STRATOS_BASE=${HOME}/stratosbase
 
+INSTANCE_NAME='ubuntu'
 BASE_IMAGE_NAME='Ubuntu 12.04 64bit'
 CARTRIDGE_IMAGE_NAME='Ubuntu 12.04 64bit Cartridge'
+KEYPAIR_NAME='openstack-demo-keypair'
 
 progname=$0
 progdir=$(dirname $progname)
@@ -141,75 +143,11 @@ EOF
    popd
 }
 
-function create_cartridge() {
-
-   pushd $PWD
-
-   sudo apt-get update
-   sudo apt-get install -y nmap
-
-   set +u
-   . ${DEVSTACK_HOME}/openrc admin admin
-   set -u
-
-   # remove any left-over instances from previous runs
-   echo "Cleaning up from previous runs."
-   set +e
-   nova delete 'ubuntu'
-   nova image-delete "$BASE_IMAGE_NAME"
-   nova image-delete "$CARTRIDGE_IMAGE_NAME"
-   set -e
-
-   if ! $(nova secgroup-list-rules default | grep -q 'tcp'); then
-     nova secgroup-add-rule default tcp 22 22 0.0.0.0/0
-   fi
-
-   if ! $(nova secgroup-list-rules default | grep -q 'icmp'); then
-     nova secgroup-add-rule default icmp -1 -1 0.0.0.0/0
-   fi
-
-   echo "Starting Ubuntu image download"
-
-   # From: http://docs.openstack.org/image-guide/content/ch_obtaining_images.html#ubuntu-images
-   wget -nv -c http://uec-images.ubuntu.com/precise/current/precise-server-cloudimg-amd64-disk1.img
-
-   echo "Finished Ubuntu image download"
-
-   # check we haven't already added the image
-   image=$(nova image-list | grep "$BASE_IMAGE_NAME" | cut -d'|' -f2)
-
-   if [ -z "$image" ]
-   then
-     glance image-create --name "$BASE_IMAGE_NAME" --is-public true --disk-format qcow2 --container-format bare --file /home/vagrant/precise-server-cloudimg-amd64-disk1.img
-   fi
-
-   if ! $(nova keypair-list | grep -q 'openstack-demo-keypair'); then
-     chmod 600 openstack-demo-keypair.pem
-     ssh-keygen -f openstack-demo-keypair.pem -y > openstack-demo-keypair.pub
-     nova keypair-add --pub_key openstack-demo-keypair.pub 'openstack-demo-keypair'
-   fi
-
-   if [[ -z $(nova flavor-list | grep 'm1.cartridge') ]]; then
-     nova flavor-create m1.cartridge 18 512 0 1
-   fi
-
-   if ! (nova list | grep -q ubuntu); then
-     # start an instance
-     flavor=$(nova flavor-list | grep 'm1.cartridge' | cut -d'|' -f2)
-     image=$(nova image-list | grep "$BASE_IMAGE_NAME" | cut -d'|' -f2)
-     nova boot --flavor $flavor --key-name openstack-demo-keypair --image $image --poll ubuntu
-   fi
-
-   instance_ip=$(nova list | grep 'ubuntu' | cut -d'|' -f7 | cut -d= -f2 | tr -d ' ')
-   # clear previous known_hosts entries
-   if [ -e "${HOME}/.ssh/known_hosts" ] 
-   then
-     ssh-keygen -f "${HOME}/.ssh/known_hosts" -R $instance_ip
-   fi
-   echo "You can connect using: 'ssh -i openstack-demo-keypair.pem ubuntu@$instance_ip'"
-
+function wait_for_ssh_port() {
+   local instance_ip=$1
+   
    # wait for the guest OS and ssh server to start
-   count=0
+   local count=0
    until [ $(nmap --open -p 22 $instance_ip |grep -c "ssh") -eq 1 ]
    do 
      let "count=count+1"
@@ -223,8 +161,9 @@ function create_cartridge() {
    done 
 
    echo "Ssh port open on $instance_ip"
+}
 
-CMDS=$(cat <<"CMD"
+CARTRIDGE_SETUP_CMDS=$(cat <<"CMD"
 
 url='https://git-wip-us.apache.org/repos/asf?p=incubator-stratos.git;a=blob_plain;f=tools/puppet3-agent'
 sudo bash -x -c "
@@ -285,26 +224,6 @@ sed -i 's:^TIMEZONE=.*$:TIMEZONE=\"Etc/UTC\":g' /root/bin/puppetinstall/puppetin
 CMD
 ) 
 
-   echo "Starting to configure the cartridge"
-   ssh -oStrictHostKeyChecking=no -i openstack-demo-keypair.pem ubuntu@$instance_ip -t "$CMDS"
-
-   nova reboot --poll ubuntu
-   instance_ip=$(nova list | grep 'ubuntu' | cut -d'|' -f7 | cut -d= -f2)
-   # wait for the guest OS and ssh server to start
-   # TODO refactor this duplicated code to a function
-   count=0
-   until [ $(nmap --open -p 22 $instance_ip |grep -c "ssh") -eq 1 ]
-   do 
-     let "count=count+1"
-     if [ $count -eq 100 ]
-     then
-       echo "Retry count failed waiting for ssh to $instance_ip"
-       exit 1
-     fi
-     sleep 10s 
-     echo "Waiting for ssh connection to $instance_ip"
-   done 
-
 EXPECT_SCRIPT=$(cat <<'END'
 #!/usr/bin/expect
 set timeout -1
@@ -324,10 +243,97 @@ exit [lindex $result 3]
 END
 ) 
 
-   echo "$EXPECT_SCRIPT" | ssh -oStrictHostKeyChecking=no -i openstack-demo-keypair.pem ubuntu@$instance_ip "cat > /home/ubuntu/config.exp"
 
-   ssh -oStrictHostKeyChecking=no -i openstack-demo-keypair.pem ubuntu@$instance_ip "sudo expect /home/ubuntu/config.exp"
+function create_cartridge() {
 
+   # devstack scripts don't work well with 'set -u'
+   set +u
+
+   pushd $PWD
+
+   sudo apt-get update
+   sudo apt-get install -y nmap
+
+   . ${DEVSTACK_HOME}/openrc admin admin
+
+   # remove any left-over instances from previous runs
+   echo "Cleaning up from previous runs."
+   set +e
+   nova delete "$INSTANCE_NAME"
+   nova image-delete "$BASE_IMAGE_NAME"
+   nova image-delete "$CARTRIDGE_IMAGE_NAME"
+   set -e
+
+   if ! $(nova secgroup-list-rules default | grep -q 'tcp'); then
+     nova secgroup-add-rule default tcp 22 22 0.0.0.0/0
+   fi
+
+   if ! $(nova secgroup-list-rules default | grep -q 'icmp'); then
+     nova secgroup-add-rule default icmp -1 -1 0.0.0.0/0
+   fi
+
+   echo "Starting Ubuntu image download"
+
+   # From: http://docs.openstack.org/image-guide/content/ch_obtaining_images.html#ubuntu-images
+   wget -nv -c http://uec-images.ubuntu.com/precise/current/precise-server-cloudimg-amd64-disk1.img
+
+   echo "Finished Ubuntu image download"
+
+   # check we haven't already added the image
+   image=$(nova image-list | grep "$BASE_IMAGE_NAME" | cut -d'|' -f2)
+
+   if [ -z "$image" ]
+   then
+     glance image-create --name "$BASE_IMAGE_NAME" --is-public true --disk-format qcow2 --container-format bare --file /home/vagrant/precise-server-cloudimg-amd64-disk1.img
+   fi
+
+   if ! $(nova keypair-list | grep -q "$KEYPAIR_NAME"); then
+     chmod 600 openstack-demo-keypair.pem
+     ssh-keygen -f ${HOME}/openstack-demo-keypair.pem -y > ${HOME}/openstack-demo-keypair.pub
+     nova keypair-add --pub_key ${HOME}/openstack-demo-keypair.pub "$KEYPAIR_NAME"
+   fi
+
+   if [[ -z $(nova flavor-list | grep 'm1.cartridge') ]]; then
+     nova flavor-create m1.cartridge 18 512 0 1
+   fi
+
+   if ! (nova list | grep -q "$INSTANCE_NAME"); then
+     # start an instance
+     flavor=$(nova flavor-list | grep 'm1.cartridge' | cut -d'|' -f2)
+     image=$(nova image-list | grep "$BASE_IMAGE_NAME" | cut -d'|' -f2)
+     nova boot --flavor $flavor --key-name openstack-demo-keypair --image $image --poll ubuntu
+   fi
+
+   instance_ip=$(nova list | grep "$INSTANCE_NAME" | cut -d'|' -f7 | cut -d'=' -f2 | tr -d ' ')
+
+   # clear previous known_hosts entries
+   if [ -e "${HOME}/.ssh/known_hosts" ] 
+   then
+     ssh-keygen -f "${HOME}/.ssh/known_hosts" -R $instance_ip
+   fi
+   echo "You can connect using: 'ssh -i ${HOME}/openstack-demo-keypair.pem ubuntu@$instance_ip'"
+
+   # wait for instance ssh server to become available
+   wait_for_ssh_port $instance_ip
+
+   # run cartridge setup commands on instance
+   echo "Starting to configure the cartridge"
+   ssh -oStrictHostKeyChecking=no -i ${HOME}/openstack-demo-keypair.pem ubuntu@$instance_ip -t "$CARTRIDGE_SETUP_CMDS"
+
+   # reboot after apt-get upgrade
+   nova reboot --poll ubuntu
+
+   # get instance ip againt - it may have changed
+   instance_ip=$(nova list | grep "$INSTANCE_NAME" | cut -d'|' -f7 | cut -d'=' -f2 | tr -d ' ')
+
+   # wait for instance ssh server to become available
+   wait_for_ssh_port $instance_ip
+
+   # copy expect script to server
+   echo "$EXPECT_SCRIPT" | ssh -oStrictHostKeyChecking=no -i ${HOME}/openstack-demo-keypair.pem ubuntu@$instance_ip "cat > /home/ubuntu/config.exp"
+
+   # now execute expect script
+   ssh -oStrictHostKeyChecking=no -i ${HOME}/openstack-demo-keypair.pem ubuntu@$instance_ip "sudo expect /home/ubuntu/config.exp"
 
    cartridge_image=$(nova image-list | grep "$CARTRIDGE_IMAGE_NAME" | cut -d'|' -f2)
 
@@ -337,16 +343,19 @@ END
      nova image-delete $cartridge_image
    fi
 
+   # this fails on Ubuntu 13.10 - see here: https://bugs.launchpad.net/nova/+bug/1244694
    nova image-create --poll ubuntu "$CARTRIDGE_IMAGE_NAME" 
-   cartridge_image=$(nova image-list | grep "$CARTRIDGE_IMAGE_NAME" | cut -d'|' -f2)
+   echo "Image has been uploaded"
 
-   # make image public
+   # make image public 
+   cartridge_image=$(nova image-list | grep "$CARTRIDGE_IMAGE_NAME" | cut -d'|' -f2)
    glance image-update $cartridge_image --is-public=true
 
    # shut off the instance - we don't need it now
    nova stop ubuntu
    nova delete ubuntu
 
+   nova image-list
    echo "Finished configuring the cartridge."
    echo "Note the cartridge id: $cartridge_image"
 

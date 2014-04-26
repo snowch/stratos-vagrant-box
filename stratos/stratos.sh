@@ -35,11 +35,8 @@ MB_PORT=61616
 # WSO2 CEP Port
 CEP_PORT=7611
 
-# checkout this version
-STRATOS_SRC_VERSION="master"
-
-# Version of stratos that gets built
-STRATOS_VERSION="4.0.0-SNAPSHOT"
+# source and maven versions
+source ${HOME}/stratos_version.conf
 
 # Stratos folders
 STRATOS_PACK_PATH="${HOME}/stratos-packs"
@@ -257,6 +254,7 @@ function prerequisites() {
 
   echo -e "\e[32mInstall prerequisite software\e[39m"
   sudo apt-get update
+  sudo apt-get upgrade -y
   sudo apt-get install -y --no-install-recommends git maven openjdk-7-jdk 
 
   if [ "$(arch)" != "x86_64" ]
@@ -299,6 +297,7 @@ function puppet_base_setup() {
   fi
 
   [ -d /etc/puppet/modules/agent/files ] || sudo mkdir -p /etc/puppet/modules/agent/files
+  [ -d /etc/puppet/modules/java/files ] || sudo mkdir -p /etc/puppet/modules/java/files
 
   #if [ "$(arch)" == "x86_64" ]
   #then
@@ -310,21 +309,36 @@ function puppet_base_setup() {
   # WARNING: currently Stratos only supports 64 bit cartridges
   JAVA_ARCH="x64"
 
+  JDK="jdk-7u51-linux-${JAVA_ARCH}.tar.gz" 
+  JDK_SHA1="bee3b085a90439c833ce18e138c9f1a615152891"
+
   echo 'Downloading Oracle JDK'
 
-  # Oracle download is so unreliable we need to be a bit more informative with the error feedback
-  trap - ERR
-  sudo wget -nv -c -P /etc/puppet/modules/java/files \
+  if [[ -e $STRATOS_PACK_PATH/$JDK ]]; then
+    sha1=$(sha1sum $STRATOS_PACK_PATH/$JDK | cut -d' ' -f1)
+
+    if [[ "$sha1" != "$JDK_SHA1" ]]; then
+       rm $STRATOS_PACK_PATH/$JDK
+
+       # Oracle download is so unreliable we need to be a bit more informative with the error feedback
+       trap - ERR
+       wget -nv -c -P $STRATOS_PACK_PATH \
             --no-cookies --no-check-certificate \
             --header "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie" \
-            "http://download.oracle.com/otn-pub/java/jdk/7u51-b13/jdk-7u51-linux-${JAVA_ARCH}.tar.gz"
+            "http://download.oracle.com/otn-pub/java/jdk/7u51-b13/${JDK}"
 
-  if [ $? -ne 0 ]
-  then
-    echo "Failed to download Oracle JDK.  Please retry later."
-    exit 1
+       if [ $? -ne 0 ]
+       then
+         echo "Failed to download Oracle JDK."
+         echo "Please retry later, or manually download to the $STRATOS_PACK_PATH folder"
+         exit 1
+       fi
+       trap 'error ${LINENO}' ERR
+    fi
   fi
-  trap 'error ${LINENO}' ERR
+  
+  # make the JDK available to puppet
+  sudo cp -f $STRATOS_PACK_PATH/${JDK} /etc/puppet/modules/java/files/
 
   # add unqualified hostname to /etc/hosts because that isn't done by puppetinstall
   sudo sed -i -e "s@puppet.${DOMAINNAME}\s*\$@puppet.${DOMAINNAME} puppet@g" /etc/hosts
@@ -594,10 +608,12 @@ function development_environment() {
    sudo apt-get install -y --no-install-recommends lubuntu-desktop eclipse-jdt xvfb lxde firefox
    sudo apt-get install -y --no-install-recommends vnc4server xrdp
 
-
+   # switch off screensaver - it can kill the CPU
    echo lxsession > ~/.xsession
-
    echo 'mode: off' > ~/.xscreensaver
+
+   # switch off update manager popup
+   sudo sed -i 's/NoDisplay=true/NoDisplay=false/g' /etc/xdg/autostart/*.desktop
 
    cd $STRATOS_SOURCE_PATH
    echo "Running 'mvn eclipse:eclipse'"
