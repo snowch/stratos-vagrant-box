@@ -214,13 +214,13 @@ function downloads () {
   if [ ! -e $STRATOS_PACK_PATH/$(basename $WSO2_CEP_URL) ]
   then
      echo "Downloading $WSO2_CEP_URL"
-     wget -nv -P $STRATOS_PACK_PATH $WSO2_CEP_URL
+     wget -N -nv -P $STRATOS_PACK_PATH $WSO2_CEP_URL
   fi
 
   if [ ! -e $STRATOS_PACK_PATH/$(basename $MYSQLJ_URL) ]
   then
      echo "Downloading $MYSQLJ_URL"
-     wget -nv -P $STRATOS_PACK_PATH $MYSQLJ_URL
+     wget -N -nv -P $STRATOS_PACK_PATH $MYSQLJ_URL
   fi
 }
 
@@ -312,17 +312,26 @@ function puppet_base_setup() {
   JDK="jdk-7u51-linux-${JAVA_ARCH}.tar.gz" 
   JDK_SHA1="bee3b085a90439c833ce18e138c9f1a615152891"
 
-  echo 'Downloading Oracle JDK'
 
+  download_jdk="true"
   if [[ -e $STRATOS_PACK_PATH/$JDK ]]; then
+    echo "Found JDK in $STRATOS_PACK_PATH folder, so not downloading again."
     sha1=$(sha1sum $STRATOS_PACK_PATH/$JDK | cut -d' ' -f1)
 
-    if [[ "$sha1" != "$JDK_SHA1" ]]; then
+    if [[ "$sha1" == "$JDK_SHA1" ]]; then
+       download_jdk="false"
+    else
        rm $STRATOS_PACK_PATH/$JDK
-
+    fi
+  fi
+ 
+  if [[ $download_jdk == "true" ]]; then
+ 
        # Oracle download is so unreliable we need to be a bit more informative with the error feedback
        trap - ERR
-       wget -nv -c -P $STRATOS_PACK_PATH \
+
+       echo 'Downloading Oracle JDK'
+       wget -N -nv -c -P $STRATOS_PACK_PATH \
             --no-cookies --no-check-certificate \
             --header "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie" \
             "http://download.oracle.com/otn-pub/java/jdk/7u51-b13/${JDK}"
@@ -334,11 +343,10 @@ function puppet_base_setup() {
          exit 1
        fi
        trap 'error ${LINENO}' ERR
-    fi
   fi
-  
+
   # make the JDK available to puppet
-  sudo cp -f $STRATOS_PACK_PATH/${JDK} /etc/puppet/modules/java/files/
+  sudo cp -f ${STRATOS_PACK_PATH}/${JDK} /etc/puppet/modules/java/files/
 
   # add unqualified hostname to /etc/hosts because that isn't done by puppetinstall
   sudo sed -i -e "s@puppet.${DOMAINNAME}\s*\$@puppet.${DOMAINNAME} puppet@g" /etc/hosts
@@ -414,7 +422,7 @@ function installer() {
   if [ ! -e $STRATOS_PACK_PATH/$(basename $ACTIVEMQ_URL) ]
   then
      echo "Downloading $ACTIVEMQ_URL/$ACTIVEMQ_FILE"
-     wget -nv -P $STRATOS_PACK_PATH $ACTIVEMQ_URL
+     wget -N -nv -P $STRATOS_PACK_PATH $ACTIVEMQ_URL
   fi
 
   if [ -e tmp-activemq ] 
@@ -433,7 +441,7 @@ function installer() {
   if [ ! -e $STRATOS_PACK_PATH/$(basename $HAWTBUF_URL) ]
   then
      echo "Downloading $HAWTBUF_URL"
-     wget -nv -P $STRATOS_PACK_PATH $HAWTBUF_URL
+     wget -N -nv -P $STRATOS_PACK_PATH $HAWTBUF_URL
   fi
 
   # TODO refactor this duplicated code
@@ -621,7 +629,7 @@ function development_environment() {
 
    # import projects
    echo "Downloading eclipse import util"
-   sudo wget -nv -P /usr/share/eclipse/dropins/ \
+   sudo wget -N -nv -P /usr/share/eclipse/dropins/ \
       https://github.com/snowch/test.myapp/raw/master/test.myapp_1.0.0.jar
 
    # get all the directories that can be imported into eclipse and append them

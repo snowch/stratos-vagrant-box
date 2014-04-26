@@ -50,6 +50,11 @@ Vagrant.configure("2") do |config|
     if Vagrant.has_plugin?("vagrant-cachier")
        config.cache.scope = :box
     end
+
+    config.vm.synced_folder File.expand_path("./m2_repo"),
+	"/home/vagrant/.m2/", 
+        :create => true,
+	:mount_option => "dmode=777,fmode=666"
     
     # put stratos on the same private network as cloudstack so they can talk to each other
     config.vm.network :private_network, :ip => STRATOS_IP

@@ -3,3 +3,4 @@ iaas.conf
 Vagrantfile.extensions
 stratos_version.conf
 downloads
+m2_repo/
