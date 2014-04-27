@@ -1,0 +1,1 @@
+config.vm.network "public_network",  :bridge => 'eth2'
