@@ -102,6 +102,7 @@ function devstack_setup() {
    sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 
    sudo apt-get update
+   sudo apt-get upgrade -y
    sudo apt-get install -y git
 
    if [ ! -d devstack ]
@@ -112,6 +113,7 @@ function devstack_setup() {
    cd devstack
    git checkout stable/havana
 
+   # create a devstack config file with our required network setup and passwords
    cat > ${HOME}/devstack/localrc <<EOF
 HOST_IP=192.168.92.30
 FLOATING_RANGE=192.168.92.8/29
@@ -126,9 +128,11 @@ SERVICE_PASSWORD=g
 SERVICE_TOKEN=g
 #SCHEDULER=nova.scheduler.filter_scheduler.FilterScheduler
 SCREEN_LOGDIR=\$DEST/logs/screen
+# support OFFLINE in the future to speed up rebuilding devstack
 #OFFLINE=$offline
 EOF
 
+   # perform a standard devstack setup using our config file
    cd ${HOME}/devstack
    ./stack.sh
 
@@ -143,6 +147,9 @@ EOF
    popd
 }
 
+# After an instance boots, it may take a while for SSH to 
+# become available in the instance.  The functions waits
+# for the ssh port to open.
 function wait_for_ssh_port() {
    local instance_ip=$1
    
@@ -162,6 +169,9 @@ function wait_for_ssh_port() {
 
    echo "Ssh port open on $instance_ip"
 }
+
+# This is a set of basic commands from the Stratos wiki for 
+# checking out puppetinstall and setting it up prior to executing 'config.sh'
 
 CARTRIDGE_SETUP_CMDS=$(cat <<"CMD"
 
@@ -224,6 +234,9 @@ sed -i 's:^TIMEZONE=.*$:TIMEZONE=\"Etc/UTC\":g' /root/bin/puppetinstall/puppetin
 CMD
 ) 
 
+# we use an expect script to automate executing 'config.sh'
+# and providing values that config.sh normally requires a user to enter
+
 EXPECT_SCRIPT=$(cat <<'END'
 #!/usr/bin/expect
 set timeout -1
@@ -264,6 +277,8 @@ function create_cartridge() {
    nova image-delete "$CARTRIDGE_IMAGE_NAME"
    set -e
 
+   # setup security rules as per the stratos wiki
+
    if ! $(nova secgroup-list-rules default | grep -q 'tcp'); then
      nova secgroup-add-rule default tcp 22 22 0.0.0.0/0
    fi
@@ -287,16 +302,19 @@ function create_cartridge() {
      glance image-create --name "$BASE_IMAGE_NAME" --is-public true --disk-format qcow2 --container-format bare --file /home/vagrant/precise-server-cloudimg-amd64-disk1.img
    fi
 
+   # add a pre-created keypair to openstack 
    if ! $(nova keypair-list | grep -q "$KEYPAIR_NAME"); then
      chmod 600 openstack-demo-keypair.pem
      ssh-keygen -f ${HOME}/openstack-demo-keypair.pem -y > ${HOME}/openstack-demo-keypair.pub
      nova keypair-add --pub_key ${HOME}/openstack-demo-keypair.pub "$KEYPAIR_NAME"
    fi
 
+   # create a new cartridge - we need 512 Mb memory, but we don't want any attached storage
    if [[ -z $(nova flavor-list | grep 'm1.cartridge') ]]; then
      nova flavor-create m1.cartridge 18 512 0 1
    fi
 
+   # make sure there isn't already an instance running. if there isn't, lets boot one up
    if ! (nova list | grep -q "$INSTANCE_NAME"); then
      # start an instance
      flavor=$(nova flavor-list | grep 'm1.cartridge' | cut -d'|' -f2)
@@ -304,9 +322,10 @@ function create_cartridge() {
      nova boot --flavor $flavor --key-name openstack-demo-keypair --image $image --poll ubuntu
    fi
 
+   # we need the instance IP address to ssh into it
    instance_ip=$(nova list | grep "$INSTANCE_NAME" | cut -d'|' -f7 | cut -d'=' -f2 | tr -d ' ')
 
-   # clear previous known_hosts entries
+   # clear any previous known_hosts entries
    if [ -e "${HOME}/.ssh/known_hosts" ] 
    then
      ssh-keygen -f "${HOME}/.ssh/known_hosts" -R $instance_ip
@@ -316,33 +335,37 @@ function create_cartridge() {
    # wait for instance ssh server to become available
    wait_for_ssh_port $instance_ip
 
-   # run cartridge setup commands on instance
+   # run out cartridge setup commands on the instance to checkout puppetinstall ready for 'config.sh' to be executed
    echo "Starting to configure the cartridge"
    ssh -oStrictHostKeyChecking=no -i ${HOME}/openstack-demo-keypair.pem ubuntu@$instance_ip -t "$CARTRIDGE_SETUP_CMDS"
 
-   # reboot after apt-get upgrade
+   # the last command performed apt-get upgrade so lets reboot the instance incase we have installed a new kernel 
    nova reboot --poll ubuntu
 
-   # get instance ip againt - it may have changed
+   # get instance ip again - it may have changed with the reboot
    instance_ip=$(nova list | grep "$INSTANCE_NAME" | cut -d'|' -f7 | cut -d'=' -f2 | tr -d ' ')
 
    # wait for instance ssh server to become available
    wait_for_ssh_port $instance_ip
 
-   # copy expect script to server
+   # copy out expect script to server
    echo "$EXPECT_SCRIPT" | ssh -oStrictHostKeyChecking=no -i ${HOME}/openstack-demo-keypair.pem ubuntu@$instance_ip "cat > /home/ubuntu/config.exp"
 
-   # now execute expect script
+   # now execute expect script that runs 'config.sh'
    ssh -oStrictHostKeyChecking=no -i ${HOME}/openstack-demo-keypair.pem ubuntu@$instance_ip "sudo expect /home/ubuntu/config.exp"
 
+   # look for existing cartridges
    cartridge_image=$(nova image-list | grep "$CARTRIDGE_IMAGE_NAME" | cut -d'|' -f2)
 
+   # if there was a cartridge from a previous run, lets remove it because we will create a 
+   # new snapshot in the next step
    if [ ! -z "$cartridge_image" ]
    then
      echo "Found an old cartridge image so deleting it."
      nova image-delete $cartridge_image
    fi
 
+   # create a snapshot of the cartridge
    # this fails on Ubuntu 13.10 - see here: https://bugs.launchpad.net/nova/+bug/1244694
    nova image-create --poll ubuntu "$CARTRIDGE_IMAGE_NAME" 
    echo "Image has been uploaded"
@@ -351,10 +374,11 @@ function create_cartridge() {
    cartridge_image=$(nova image-list | grep "$CARTRIDGE_IMAGE_NAME" | cut -d'|' -f2)
    glance image-update $cartridge_image --is-public=true
 
-   # shut off the instance - we don't need it now
+   # shut off the instance - we don't need it running
    nova stop ubuntu
    nova delete ubuntu
 
+   # provide some output to show the cartridge
    nova image-list
    echo "Finished configuring the cartridge."
    echo "Note the cartridge id: $cartridge_image"
