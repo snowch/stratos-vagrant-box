@@ -32,9 +32,6 @@ PUPPET_HOSTNAME="puppet.stratos.com"
 MB_IP_ADDR="127.0.0.1"
 MB_PORT=61616
 
-# WSO2 CEP Port
-CEP_PORT=7611
-
 # source and maven versions
 source ${HOME}/stratos_version.conf
 
@@ -43,9 +40,6 @@ STRATOS_PACK_PATH="${HOME}/stratos-packs"
 STRATOS_SETUP_PATH="${HOME}/stratos-installer"
 STRATOS_SOURCE_PATH="${HOME}/incubator-stratos"
 STRATOS_PATH="${HOME}/stratos"
-
-# WSO2 CEP 3.0.0 location.
-WSO2_CEP_URL="http://people.apache.org/~chsnow/wso2cep-3.0.0.zip"
 
 # ActiveMQ 5.9.1 location.  Note: only 5.9.1 is supported by this script
 ACTIVEMQ_URL="http://archive.apache.org/dist/activemq/5.9.1/apache-activemq-5.9.1-bin.tar.gz"
@@ -157,7 +151,7 @@ Where:
        This command is the same as running:
        $progname -m && $progname -w && $progname -c && $progname -b && $progname -p && $progname -n
 
-    -w Download pre-requisite files such as WSO2 CEP and MYSQLJ
+    -w Download pre-requisite files such as MYSQLJ
 
 
     -c Checkout Stratos 'master' code.  
@@ -210,12 +204,6 @@ function downloads () {
   echo -e "\e[32mDownload prerequisite software\e[39m"
 
   [ -d $STRATOS_PACK_PATH ] || mkdir $STRATOS_PACK_PATH
-
-  if [ ! -e $STRATOS_PACK_PATH/$(basename $WSO2_CEP_URL) ]
-  then
-     echo "Downloading $WSO2_CEP_URL"
-     wget -N -nv -P $STRATOS_PACK_PATH $WSO2_CEP_URL
-  fi
 
   if [ ! -e $STRATOS_PACK_PATH/$(basename $MYSQLJ_URL) ]
   then
@@ -379,8 +367,6 @@ function puppet_stratos_setup() {
   sudo sed -i -E "s:(\s*[$]local_package_dir.*=).*$:\1 \"$STRATOS_PACK_PATH\":g" /etc/puppet/manifests/nodes.pp
   sudo sed -i -E "s:(\s*[$]mb_ip.*=).*$:\1 \"$IP_ADDR\":g" /etc/puppet/manifests/nodes.pp
   sudo sed -i -E "s:(\s*[$]mb_port.*=).*$:\1 \"$MB_PORT\":g" /etc/puppet/manifests/nodes.pp
-  sudo sed -i -E "s:(\s*[$]cep_ip.*=).*$:\1 \"$IP_ADDR\":g" /etc/puppet/manifests/nodes.pp
-  sudo sed -i -E "s:(\s*[$]cep_port.*=).*$:\1 \"$CEP_PORT\":g" /etc/puppet/manifests/nodes.pp
   # TODO move hardcoded strings to variables
   sudo sed -i -E "s:(\s*[$]truststore_password.*=).*$:\1 \"wso2carbon\":g" /etc/puppet/manifests/nodes.pp
 
