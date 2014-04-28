@@ -165,7 +165,7 @@ Where:
     -p Setup puppet master for Stratos. 
        You will probably want to re-run this after you re-build Stratos.
 
-    -n Install Stratos (and startup Stratos).
+    -n Install Stratos and CLI (and startup Stratos).
        You will probably want to re-run this after you re-setup Puppet.
        Use 'tail -f ${HOME}/stratos-log/stratos-setup.log' to watch output.
 
@@ -394,11 +394,20 @@ function installer() {
         sudo rm -rf $STRATOS_PATH
         mysql -u root -p'password' -e 'drop database if exists userstore;' mysql
     else
-        echo "Can't install on top of existing $STRATOS_HOME folder.  Exiting."
+        echo "Can't install on top of existing $STRATOS_PATH folder.  Exiting."
         exit 1
     fi
   fi
 
+  unzip $STRATOS_SOURCE_PATH/products/stratos-cli/distribution/target/apache-stratos-cli-${STRATOS_VERSION}.zip -d $STRATOS_PATH
+
+  STRATOS_CLI_HOME=$STRATOS_PATH/apache-stratos-cli-$STRATOS_VERSION
+
+  # TODO use sed line replacement
+  grep -q '^export STRATOS_CLI_HOME' ~/.profile || echo "export STRATOS_CLI_HOME=$STRATOS_CLI_HOME" >> ~/.profile
+  . ~/.profile
+  export STRATOS_CLI_HOME
+ 
   cp -rpf $STRATOS_SOURCE_PATH/tools/stratos-installer/* $STRATOS_SETUP_PATH/
   cp -f $STRATOS_SOURCE_PATH/products/stratos/modules/distribution/target/apache-stratos-${STRATOS_VERSION}.zip $STRATOS_PACK_PATH/
 
