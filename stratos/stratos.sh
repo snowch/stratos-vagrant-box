@@ -47,6 +47,9 @@ ACTIVEMQ_URL="http://archive.apache.org/dist/activemq/5.9.1/apache-activemq-5.9.
 # MySQL download location.
 MYSQLJ_URL="http://repo1.maven.org/maven2/mysql/mysql-connector-java/5.1.29/mysql-connector-java-5.1.29.jar"
 
+# Tomcat download location.
+TOMCAT_URL="http://archive.apache.org/dist/tomcat/tomcat-7/v7.0.52/bin/apache-tomcat-7.0.52.tar.gz"
+
 # Hawtbuf download location.
 HAWTBUF_URL="http://repo1.maven.org/maven2/org/fusesource/hawtbuf/hawtbuf/1.2/hawtbuf-1.2.jar"
 
@@ -286,6 +289,7 @@ function puppet_base_setup() {
 
   [ -d /etc/puppet/modules/agent/files ] || sudo mkdir -p /etc/puppet/modules/agent/files
   [ -d /etc/puppet/modules/java/files ] || sudo mkdir -p /etc/puppet/modules/java/files
+  [ -d /etc/puppet/modules/tomcat/files ] || sudo mkdir -p /etc/puppet/modules/tomcat/files
 
   #if [ "$(arch)" == "x86_64" ]
   #then
@@ -335,6 +339,12 @@ function puppet_base_setup() {
 
   # make the JDK available to puppet
   sudo cp -f ${STRATOS_PACK_PATH}/${JDK} /etc/puppet/modules/java/files/
+
+  # download tomcat
+  wget -N -nv -c -P $STRATOS_PACK_PATH $TOMCAT_URL
+
+  # make tomcat available to puppet
+  sudo cp -f ${STRATOS_PACK_PATH}/$(basename $TOMCAT_URL) /etc/puppet/modules/tomcat/files/
 
   # add unqualified hostname to /etc/hosts because that isn't done by puppetinstall
   sudo sed -i -e "s@puppet.${DOMAINNAME}\s*\$@puppet.${DOMAINNAME} puppet@g" /etc/hosts

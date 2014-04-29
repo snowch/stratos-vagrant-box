@@ -21,6 +21,7 @@ set -u
 
 DEVSTACK_HOME=${HOME}/devstack
 STRATOS_BASE=${HOME}/stratosbase
+TOMCAT_BASE=${HOME}/tomcatbase
 KEYPAIR_NAME='openstack-demo-keypair'
 DOWNLOAD_DIR=/vagrant/downloads/openstack-docker
 
@@ -255,6 +256,20 @@ function docker_setup() {
 
    docker tag stratosbase 192.168.92.30:5042/stratosbase
    docker push 192.168.92.30:5042/stratosbase
+
+   [ -d $TOMCAT_BASE ] || mkdir $TOMCAT_BASE
+
+   cp -f /vagrant/openstack-docker/Dockerfile_tomcat $TOMCAT_BASE/Dockerfile
+   cp -f /vagrant/openstack-docker/init.sh $TOMCAT_BASE/
+   cp -f /vagrant/openstack-docker/puppet.conf $TOMCAT_BASE/
+   cp -f /vagrant/openstack-docker/stratos_sendinfo.rb $TOMCAT_BASE/
+   cp -f /vagrant/openstack-docker/run_scripts_tomcat.sh $TOMCAT_BASE/
+
+   cd $TOMCAT_BASE
+   docker build -t tomcatbase .
+
+   docker tag tomcatbase 192.168.92.30:5042/tomcatbase
+   docker push 192.168.92.30:5042/tomcatbase
 
    echo "================================"
    echo "Openstack installation finished."

@@ -1,0 +1,17 @@
+# tomcatbase
+# VERSION 0.0.1
+FROM stratosbase
+MAINTAINER Damitha Kumarage "damitha23@gmail.com"
+MAINTAINER Lakmal Warusawithana "lakmal@apache.org"
+
+RUN apt-get install -q -y puppet
+RUN apt-get install -q -y ruby
+
+RUN mkdir /root/bin
+ADD init.sh /root/bin/
+ADD puppet.conf /etc/puppet/
+RUN chmod +x /root/bin/init.sh
+ADD stratos_sendinfo.rb /root/bin/
+
+EXPOSE 22
+ENTRYPOINT /usr/local/bin/run_scripts.sh | /usr/sbin/sshd -D

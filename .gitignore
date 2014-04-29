@@ -5,3 +5,5 @@ Vagrantfile.openstack.extensions
 stratos_version.conf
 downloads
 m2_repo/
+stratos.log
+openstack.log
