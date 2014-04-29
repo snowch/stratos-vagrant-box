@@ -1,7 +1,6 @@
 .vagrant/
 iaas.conf
-Vagrantfile.stratos.extensions
-Vagrantfile.openstack.extensions
+Vagrantfile.extensions
 stratos_version.conf
 downloads
 m2_repo/

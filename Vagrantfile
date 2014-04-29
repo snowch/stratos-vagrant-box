@@ -20,47 +20,43 @@
 
 
 STRATOS_IP="192.168.56.5"
+OPENSTACK_IP="192.168.92.30"
 
 Vagrant.configure("2") do |config|
 
     # use the opscode vagrant box definitions because they have a 40Gb disk which should be enough for
     # stratos. ubuntu cloud images only have 10Gb which is not enough.
 
-  config.vm.define "stratos" do |stratos|
-
     # 64 bit machine
-    stratos.vm.box = "opscode-ubuntu-12.04-64"
-    stratos.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-12.04_chef-provisionerless.box"
+    config.vm.box = "opscode-ubuntu-13.04-64"
+    config.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-13.04_chef-provisionerless.box"
 
     # puppetinstall scripts hardcode the guest name to 'puppet.$DOMAIN' so lets keep with that
-    stratos.vm.hostname = "puppet.stratos.com"
+    config.vm.hostname = "puppet.stratos.com"
 
     # Use vagrant cachier if it is available - it will speed up repeated 
     # 'vagrant destroy' and 'vagrant up' calls
     if Vagrant.has_plugin?("vagrant-cachier")
-       stratos.cache.scope = :box
+       config.cache.scope = :box
     end
 
-    stratos.vm.synced_folder File.expand_path("./m2_repo"),
+    config.vm.synced_folder File.expand_path("./m2_repo"),
 	"/home/vagrant/.m2/", 
         :create => true,
 	:mount_option => "dmode=777,fmode=666"
     
     # put stratos on the same private network as cloudstack so they can talk to each other
-    stratos.vm.network :private_network, :ip => STRATOS_IP
+    config.vm.network :private_network, :ip => STRATOS_IP
 
-    # add another network for openstack
-    # TODO: read IaaS.conf file to see if openstack is required, if so enable this
-    # if (openstack)
-    stratos.vm.network :private_network, :ip => "192.168.92.40", :netmask => "255.255.255.0"
-    # end
+    config.vm.network :private_network, :ip => OPENSTACK_IP, :netmask => "255.255.255.0"
 
     # apply provisioning script
-    stratos.vm.provision "shell", inline: $stratos_script, privileged: false
+    config.vm.provision "shell", inline: $stratos_script, privileged: false
+    config.vm.provision "shell", inline: $openstack_script, privileged: false
 
     # virtualbox customisations
-    stratos.vm.provider "virtualbox" do |v|
-      v.customize ["modifyvm", :id, "--memory", 2048 ]
+    config.vm.provider "virtualbox" do |v|
+      v.customize ["modifyvm", :id, "--memory", 4096 ]
 
       # uncomment these to use the virtualbox gui:
       # v.gui = true
@@ -73,49 +69,11 @@ Vagrant.configure("2") do |config|
     # For example, I use it to join my LAN network when running vagrant on a server
     #   stratos.vm.network "public_network"
     begin
-      eval(File.open("Vagrantfile.stratos.extensions").read)
-      puts "Loaded Vagrantfile.stratos.extensions"
+      eval(File.open("Vagrantfile.extensions").read)
+      puts "Loaded Vagrantfile.extensions"
     rescue
       # do nothing
     end
-  end
-
-  config.vm.define "openstack" do |openstack|
-
-    # 64 bit machine
-    openstack.vm.box = "opscode-ubuntu-13.04-64"
-    openstack.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-13.04_chef-provisionerless.box"
-
-    openstack.vm.hostname = "iaas.stratos.com"
-
-    # Use vagrant cachier if it is available - it will speed up repeated 
-    # 'vagrant destroy' and 'vagrant up' calls
-    if Vagrant.has_plugin?("vagrant-cachier")
-       openstack.cache.scope = :box
-    end
-
-    openstack.vm.network :private_network, :ip => "192.168.92.30", :netmask => "255.255.255.0"
-
-    # apply provisioning script
-    openstack.vm.provision "shell", inline: $openstack_script, privileged: false
-
-    # virtualbox customisations
-    openstack.vm.provider "virtualbox" do |v|
-      v.customize ["modifyvm", :id, "--memory", 2048 ]
-    end
-
-    # If you want to customise the Vagrantfile just for your environment, try
-    # putting your customisations in Vagrantfile.openstack.extensions
-    # 
-    # For example, I use it to join my LAN network when running vagrant on a server
-    #   stratos.vm.network "public_network"
-    begin
-      eval(File.open("Vagrantfile.openstack.extensions").read)
-      puts "Loaded Vagrantfile.openstack.extensions"
-    rescue
-      # do nothing
-    end
-  end
 
 end
 

@@ -3,27 +3,36 @@
 # fail on error
 set -e
 
-echo "Starting build.  Please be patient."
+echo "Destroying previous virtual machines"
+vagrant destroy -f > stratos.log 2>&1
 
-vagrant destroy -f stratos > stratos.log 2>&1
-vagrant up stratos >> stratos.log 2>&1
+echo "Starting new virtual machine"
+vagrant up >> stratos.log 2>&1
 
-vagrant destroy -f openstack > openstack.log 2>&1
-vagrant up openstack >> openstack.log 2>&1
+{
+############### 
+# Stratos Setup
+###############
 
-{ 
-  # we can run the stratos build in the background
-  vagrant ssh -c "./stratos.sh -f && ./stratos.sh -d" stratos >> stratos.log 2>&1
-} &
+echo "Starting Stratos setup"
+vagrant ssh -c "./stratos.sh -f" >> stratos.log 2>&1
+# '-d' sets up eclipse and lubuntu.  the next line can be commented 
+# out if you just want a runtime environment
+vagrant ssh -c "./stratos.sh -d" >> stratos.log 2>&1
 
-{ 
-  # first run with '-o' sets up the kernel
-  vagrant ssh -c "./openstack-docker.sh -o" openstack >> openstack.log 2>&1 
-  # reboot after setting up the kernel
-  vagrant reload openstack >> openstack.log 2>&1
-  # finish the openstack setup in the background
-  vagrant ssh -c "./openstack-docker.sh -o && ./openstack-docker.sh -d" openstack >> openstack.log 2>&1&
-} &
+################# 
+# OpenStack Setup
+#################
 
-echo "Building Stratos and OpenStack instances."
+echo "Setting up kernel for Docker"
+vagrant ssh -c "./openstack-docker.sh -o" >> stratos.log 2>&1 
+
+echo "Rebooting after new kernel installation"
+vagrant reload >> stratos.log 2>&1
+
+echo "Setting up docker"
+vagrant ssh -c "./openstack-docker.sh -o && ./openstack-docker.sh -d" >> stratos.log 2>&1
+
+} & # run whole setup in the background
+
 echo "See stratos.log and openstack.log for build output."

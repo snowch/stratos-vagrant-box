@@ -409,14 +409,16 @@ function installer() {
     fi
   fi
 
-  unzip $STRATOS_SOURCE_PATH/products/stratos-cli/distribution/target/apache-stratos-cli-${STRATOS_VERSION}.zip -d $STRATOS_PATH
-
-  STRATOS_CLI_HOME=$STRATOS_PATH/apache-stratos-cli-$STRATOS_VERSION
-
   # TODO use sed line replacement
   grep -q '^export STRATOS_CLI_HOME' ~/.profile || echo "export STRATOS_CLI_HOME=$STRATOS_CLI_HOME" >> ~/.profile
   . ~/.profile
   export STRATOS_CLI_HOME
+
+  echo $STRATOS_SOURCE_PATH/products/stratos-cli/distribution/target/apache-stratos-cli-${STRATOS_VERSION}.zip
+
+  rm -rf $STRATOS_PATH/apache-stratos-cli-$STRATOS_VERSION
+  unzip $STRATOS_SOURCE_PATH/products/stratos-cli/distribution/target/apache-stratos-cli-${STRATOS_VERSION}.zip -d $STRATOS_PATH
+  STRATOS_CLI_HOME=$STRATOS_PATH/apache-stratos-cli-$STRATOS_VERSION
  
   cp -rpf $STRATOS_SOURCE_PATH/tools/stratos-installer/* $STRATOS_SETUP_PATH/
   cp -f $STRATOS_SOURCE_PATH/products/stratos/modules/distribution/target/apache-stratos-${STRATOS_VERSION}.zip $STRATOS_PACK_PATH/
@@ -565,6 +567,8 @@ function kill_servers() {
     sleep 10s
     kill -SIGINT $stratos_pid
   done
+
+  echo > $STRATOS_PATH/apache-stratos-default/wso2carbon.pid
 
   # turn error handling back on
   trap 'error ${LINENO}' ERR
