@@ -414,17 +414,17 @@ function installer() {
   . ~/.profile
   export STRATOS_CLI_HOME
 
-  echo $STRATOS_SOURCE_PATH/products/stratos-cli/distribution/target/apache-stratos-cli-${STRATOS_VERSION}.zip
-
-  rm -rf $STRATOS_PATH/apache-stratos-cli-$STRATOS_VERSION
-  unzip $STRATOS_SOURCE_PATH/products/stratos-cli/distribution/target/apache-stratos-cli-${STRATOS_VERSION}.zip -d $STRATOS_PATH
-  STRATOS_CLI_HOME=$STRATOS_PATH/apache-stratos-cli-$STRATOS_VERSION
+  # extract cli zip file
+  cli_file=$(find $STRATOS_SOURCE_PATH/products/stratos-cli/distribution/target/apache-stratos-cli-*.zip)
+  rm -rf $STRATOS_PATH/$(basename $cli_file)
+  unzip $cli_file -d $STRATOS_PATH
+  STRATOS_CLI_HOME=$STRATOS_PATH/$(basename $cli_file)
  
   cp -rpf $STRATOS_SOURCE_PATH/tools/stratos-installer/* $STRATOS_SETUP_PATH/
-  cp -f $STRATOS_SOURCE_PATH/products/stratos/modules/distribution/target/apache-stratos-${STRATOS_VERSION}.zip $STRATOS_PACK_PATH/
+  cp -f $STRATOS_SOURCE_PATH/products/stratos/modules/distribution/target/apache-stratos-*.zip $STRATOS_PACK_PATH/
 
-  sudo cp -f $STRATOS_SOURCE_PATH/products/cartridge-agent/modules/distribution/target/apache-stratos-cartridge-agent-${STRATOS_VERSION}-bin.zip /etc/puppet/modules/agent/files/
-  sudo cp -f $STRATOS_SOURCE_PATH/products/load-balancer/modules/distribution/target/apache-stratos-load-balancer-${STRATOS_VERSION}.zip /etc/puppet/modules/lb/files/
+  sudo cp -f $STRATOS_SOURCE_PATH/products/cartridge-agent/modules/distribution/target/apache-stratos-cartridge-agent-*-bin.zip /etc/puppet/modules/agent/files/
+  sudo cp -f $STRATOS_SOURCE_PATH/products/load-balancer/modules/distribution/target/apache-stratos-load-balancer-*.zip /etc/puppet/modules/lb/files/
 
   if [ ! -e $STRATOS_PACK_PATH/$(basename $ACTIVEMQ_URL) ]
   then
@@ -630,6 +630,7 @@ function development_environment() {
    echo 'mode: off' > ~/.xscreensaver
 
    # switch off update manager popup
+   # FIXME: this doesn't seem to work
    sudo sed -i 's/NoDisplay=true/NoDisplay=false/g' /etc/xdg/autostart/*.desktop
 
    cd $STRATOS_SOURCE_PATH

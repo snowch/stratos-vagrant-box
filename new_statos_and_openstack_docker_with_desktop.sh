@@ -19,6 +19,9 @@ vagrant up >> stratos.log 2>&1
 
 echo "Starting Stratos setup"
 vagrant ssh -c "./stratos.sh -f" >> stratos.log 2>&1
+# '-d' sets up eclipse and lubuntu.  the next line can be commented 
+# out if you just want a runtime environment
+vagrant ssh -c "./stratos.sh -d" >> stratos.log 2>&1
 
 ################# 
 # OpenStack Setup

@@ -3,10 +3,10 @@
 # the stratos version to check out and build 
 # i.e. git checkout $STRATOS_SRC_VERSION
 
-export STRATOS_SRC_VERSION="master"
+export STRATOS_SRC_VERSION="4.0.0-incubating"
 
 # The Maven Version string - this is used
 # by scripts installing stratos
 
-export STRATOS_VERSION="4.0.0-SNAPSHOT"
+export STRATOS_VERSION="4.0.0-incubating"
 
