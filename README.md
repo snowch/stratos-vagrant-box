@@ -16,6 +16,7 @@ Tested with:
 
 - Vagrant 1.4.2
 - Virtualbox 4.3.8r92456
+- At least 5Gb free memory
 
 #### Quick Start
 
@@ -25,16 +26,11 @@ To setup stratos and openstack:
 - Install Virtualbox using the above link
 - Clone this project: ```git clone git@github.com:snowch/devcloud-script.git```
 - Change into the project directory: ```cd devcloud-script```
-- Run either:
-  - ```./stratos_developer_env_setup.sh``` (unix/cygwin)
-  - ```stratos_developer_env_setup.bat``` (windows)
+- Change into the project directory: ```git checkout openstack-docker```
+- Run ```./new_statos_and_openstack_docker.sh```
 - Access Stratos Console: https://192.168.56.5:9443/console - admin/admin
 - Access Openstack Console: http://192.168.92.30 - admin/g
-- Login to your development environment using rdesktop (*nix) or Remote Desktop Connection (windows):
- - Host: 192.168.56.5
- - Port: 3389
- - Username: vagrant
- - Password: vagrant
+- See test.log for basic provisioning output
 
 #### Issues
 
