@@ -21,6 +21,9 @@ set -u
 
 DEVSTACK_HOME=${HOME}/devstack
 STRATOS_BASE=${HOME}/stratosbase
+TOMCAT_BASE=${HOME}/tomcatbase
+KEYPAIR_NAME='openstack-demo-keypair'
+DOWNLOAD_DIR=/vagrant/downloads/openstack-docker
 
 progname=$0
 progdir=$(dirname $progname)
@@ -35,10 +38,11 @@ function finish {
 trap finish SIGINT
 
 function main() {
-  while getopts 'fh' flag; do
+  while getopts 'odh' flag; do
     progarg=${flag}
     case "${flag}" in
-      f) initial_setup ; exit $? ;;
+      o) openstack_setup ; exit $? ;;
+      d) docker_setup ; exit $? ;;
       h) usage ; exit $? ;;
       \?) usage ; exit $? ;;
       *) usage ; exit $? ;;
@@ -49,11 +53,13 @@ function main() {
 
 function usage () {
    cat <<EOF
-Usage: $progname -[f|h]
+Usage: $progname -[o|d|h]
 
 Where:
 
-    -f perform a complete setup of the openstack runtime environment
+    -o openstack devstack setup
+
+    -d docker setup
 
     -h show this help message
 
@@ -62,15 +68,14 @@ EOF
    exit 0
 }
 
-function initial_setup() {
+function openstack_setup() {
    
    echo -e "\e[32mPerforming initial setup.\e[39m"
 
    sudo apt-get update
+   sudo apt-get upgrade -y
 
-   # is 3.8.0-26 kernel installed 
-   #dpkg --get-selections | grep linux-image-3.8.0-26-generic | grep -v deinstall
-
+   # install 3.8.0-26 kernel if isn't already installed
    dpkg -s "linux-image-3.8.0-26-generic" >/dev/null || 
    { 
      sudo apt-get install -y linux-image-3.8.0-26-generic linux-headers-3.8.0-26-generic linux-image-extra-3.8.0-26-generic
@@ -113,8 +118,8 @@ function initial_setup() {
    # Use Damitha's scripts for the actuall install
    # Source: http://damithakumarage.wordpress.com/2014/01/31/how-to-setup-openstack-havana-with-docker-driver/
 
-   cp -f /vagrant/openstack/install_docker0.sh ${HOME}/devstack/tools/docker/
-   cp -f /vagrant/openstack/install_docker1.sh ${HOME}/devstack/tools/docker/
+   cp -f /vagrant/openstack-docker/install_docker0.sh ${HOME}/devstack/tools/docker/
+   cp -f /vagrant/openstack-docker/install_docker1.sh ${HOME}/devstack/tools/docker/
 
    chmod +x ${HOME}/devstack/tools/docker/install_docker0.sh
    chmod +x ${HOME}/devstack/tools/docker/install_docker1.sh
@@ -122,8 +127,11 @@ function initial_setup() {
    # docker scripts need curl 
    sudo apt-get install -y curl
 
-   wget -c http://get.docker.io/images/openstack/docker-registry.tar.gz -P ${DEVSTACK_HOME}/files/
-   wget -c http://get.docker.io/images/openstack/docker-ut.tar.gz -P ${DEVSTACK_HOME}/files
+   wget -N -nv -c http://get.docker.io/images/openstack/docker-registry.tar.gz -P ${DOWNLOAD_DIR}/
+   cp -f ${DOWNLOAD_DIR}/docker-registry.tar.gz ${DEVSTACK_HOME}/files/
+
+   wget -N -nv -c http://get.docker.io/images/openstack/docker-ut.tar.gz -P ${DOWNLOAD_DIR}/
+   cp -f ${DOWNLOAD_DIR}/docker-ut.tar.gz ${DEVSTACK_HOME}/files 
 
    ./tools/docker/install_docker0.sh
 
@@ -179,7 +187,7 @@ EOF
 
    cat > ${HOME}/devstack/localrc <<'EOF'
 HOST_IP=192.168.92.30
-FLOATING_RANGE=192.168.92.0/27
+FLOATING_RANGE=192.168.92.8/29
 FIXED_RANGE=10.11.12.0/24
 FIXED_NETWORK_SIZE=256
 FLAT_INTERFACE=eth2
@@ -198,27 +206,50 @@ EOF
    cd ${HOME}/devstack
    ./stack.sh
 
+}
+
+function docker_setup() {
+
    set +u
-   . ${DEVSTACK_HOME}/openrc
+   . ${DEVSTACK_HOME}/openrc admin admin
    set -u
 
-   nova secgroup-add-rule default tcp 22 22 0.0.0.0/0
-   nova secgroup-add-rule default icmp -1 -1 0.0.0.0/0
+   # setup security rules as per the stratos wiki
+
+   if ! $(nova secgroup-list-rules default | grep -q 'tcp'); then
+     nova secgroup-add-rule default tcp 22 22 0.0.0.0/0
+   fi
+
+   if ! $(nova secgroup-list-rules default | grep -q 'icmp'); then
+     nova secgroup-add-rule default icmp -1 -1 0.0.0.0/0
+   fi
+
+   # add a pre-created keypair to openstack
+   if ! $(nova keypair-list | grep -q "$KEYPAIR_NAME"); then
+     chmod 600 openstack-demo-keypair.pem
+     ssh-keygen -f ${HOME}/openstack-demo-keypair.pem -y > ${HOME}/openstack-demo-keypair.pub
+     nova keypair-add --pub_key ${HOME}/openstack-demo-keypair.pub "$KEYPAIR_NAME"
+   fi
 
    # Patch docker driver, see
    # http://damithakumarage.wordpress.com/2014/01/31/how-to-setup-openstack-havana-with-docker-driver/
    sed -i -e 's/destroy_disks=True)/destroy_disks=True, context=None)/g' /opt/stack/nova/nova/virt/docker/driver.py
 
-   wget -c https://www.dropbox.com/sh/dmmey60kvdihc31/F73PRm6B8q/ubuntu64-docker-ssh.tar.gz -P ${DEVSTACK_HOME}/files
+   # see http://damithakumarage.wordpress.com/2014/02/01/docker-driver-for-openstack-havana/#comment-1000
+   if [[ ! -e ${DOWNLOAD_DIR}/ubuntu64-docker-ssh.tar.gz ]]; then
+      wget -N -nv -c https://www.dropbox.com/sh/dmmey60kvdihc31/F73PRm6B8q/ubuntu64-docker-ssh.tar.gz -P ${DOWNLOAD_DIR}
+   fi
+   cp -f ${DOWNLOAD_DIR}/ubuntu64-docker-ssh.tar.gz ${DEVSTACK_HOME}/files
+
 
    docker import - ubuntu64base < ${DEVSTACK_HOME}/files/ubuntu64-docker-ssh.tar.gz
 
    [ -d $STRATOS_BASE ] || mkdir $STRATOS_BASE
 
-   cp -f /vagrant/openstack/Dockerfile $STRATOS_BASE/
-   cp -f /vagrant/openstack/metadata_svc_bugfix.sh $STRATOS_BASE/
-   cp -f /vagrant/openstack/file_edit_patch.sh $STRATOS_BASE/
-   cp -f /vagrant/openstack/run_scripts.sh $STRATOS_BASE/
+   cp -f /vagrant/openstack-docker/Dockerfile $STRATOS_BASE/
+   cp -f /vagrant/openstack-docker/metadata_svc_bugfix.sh $STRATOS_BASE/
+   cp -f /vagrant/openstack-docker/file_edit_patch.sh $STRATOS_BASE/
+   cp -f /vagrant/openstack-docker/run_scripts.sh $STRATOS_BASE/
 
    cd $STRATOS_BASE
    docker build -t stratosbase .
@@ -226,18 +257,28 @@ EOF
    docker tag stratosbase 192.168.92.30:5042/stratosbase
    docker push 192.168.92.30:5042/stratosbase
 
-   echo "==============================================="
-   echo "Openstack installation finished.  Restart using"
-   echo "'vagrant reload'"
-   echo ""
-   echo "Then login using:"
+   [ -d $TOMCAT_BASE ] || mkdir $TOMCAT_BASE
+
+   cp -f /vagrant/openstack-docker/Dockerfile_tomcat $TOMCAT_BASE/Dockerfile
+   cp -f /vagrant/openstack-docker/init.sh $TOMCAT_BASE/
+   cp -f /vagrant/openstack-docker/puppet.conf $TOMCAT_BASE/
+   cp -f /vagrant/openstack-docker/stratos_sendinfo.rb $TOMCAT_BASE/
+   cp -f /vagrant/openstack-docker/run_scripts_tomcat.sh $TOMCAT_BASE/
+
+   cd $TOMCAT_BASE
+   docker build -t tomcatbase .
+
+   docker tag tomcatbase 192.168.92.30:5042/tomcatbase
+   docker push 192.168.92.30:5042/tomcatbase
+
+   echo "================================"
+   echo "Openstack installation finished."
+   echo "Login using:"
    echo ""
    echo "URL http://192.168.92.30/"
    echo "Username: admin or demo"
    echo "Passsword: g"
-   echo "=============================================="
- 
-
+   echo "================================"
 }
 
 main "$@"

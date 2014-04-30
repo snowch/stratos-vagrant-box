@@ -3,11 +3,11 @@
   "partitionGroup": [
     {
       "id": "G1",
-      "partitionAlgo": "round-robin",
+      "partitionAlgo": "one-after-another",
       "partition": [
         {
           "id": "P1",
-          "partitionMax": "2",
+          "partitionMax": "1",
           "partitionMin": "1"
         }
       ]

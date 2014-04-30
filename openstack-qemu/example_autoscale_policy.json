@@ -2,25 +2,13 @@
   "id": "economyPolicy",
   "loadThresholds": {
     "requestsInFlight": {
-      "average": "40",
-      "gradient": "0",
-      "secondDerivative": "0",
-      "scaleDownMarginOfGradient": "1.0",
-      "scaleDownMarginOfSecondDerivative": "0.2"
+      "average": 50
     },
     "memoryConsumption": {
-      "average": "100",
-      "gradient": "0",
-      "secondDerivative": "0",
-      "scaleDownMarginOfGradient": "1.0",
-      "scaleDownMarginOfSecondDerivative": "0.2"
+      "average": 70
     },
     "loadAverage": {
-      "average": "100",
-      "gradient": "0",
-      "secondDerivative": "0",
-      "scaleDownMarginOfGradient": "1.0",
-      "scaleDownMarginOfSecondDerivative": "0.2"
+      "average": 100
     }
   }
 }

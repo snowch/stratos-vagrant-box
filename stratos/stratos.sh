@@ -32,9 +32,6 @@ PUPPET_HOSTNAME="puppet.stratos.com"
 MB_IP_ADDR="127.0.0.1"
 MB_PORT=61616
 
-# WSO2 CEP Port
-CEP_PORT=7611
-
 # source and maven versions
 source ${HOME}/stratos_version.conf
 
@@ -44,14 +41,14 @@ STRATOS_SETUP_PATH="${HOME}/stratos-installer"
 STRATOS_SOURCE_PATH="${HOME}/incubator-stratos"
 STRATOS_PATH="${HOME}/stratos"
 
-# WSO2 CEP 3.0.0 location.
-WSO2_CEP_URL="http://people.apache.org/~chsnow/wso2cep-3.0.0.zip"
-
 # ActiveMQ 5.9.1 location.  Note: only 5.9.1 is supported by this script
 ACTIVEMQ_URL="http://archive.apache.org/dist/activemq/5.9.1/apache-activemq-5.9.1-bin.tar.gz"
 
 # MySQL download location.
 MYSQLJ_URL="http://repo1.maven.org/maven2/mysql/mysql-connector-java/5.1.29/mysql-connector-java-5.1.29.jar"
+
+# Tomcat download location.
+TOMCAT_URL="http://archive.apache.org/dist/tomcat/tomcat-7/v7.0.52/bin/apache-tomcat-7.0.52.tar.gz"
 
 # Hawtbuf download location.
 HAWTBUF_URL="http://repo1.maven.org/maven2/org/fusesource/hawtbuf/hawtbuf/1.2/hawtbuf-1.2.jar"
@@ -157,7 +154,7 @@ Where:
        This command is the same as running:
        $progname -m && $progname -w && $progname -c && $progname -b && $progname -p && $progname -n
 
-    -w Download pre-requisite files such as WSO2 CEP and MYSQLJ
+    -w Download pre-requisite files such as MYSQLJ
 
 
     -c Checkout Stratos 'master' code.  
@@ -171,7 +168,7 @@ Where:
     -p Setup puppet master for Stratos. 
        You will probably want to re-run this after you re-build Stratos.
 
-    -n Install Stratos (and startup Stratos).
+    -n Install Stratos and CLI (and startup Stratos).
        You will probably want to re-run this after you re-setup Puppet.
        Use 'tail -f ${HOME}/stratos-log/stratos-setup.log' to watch output.
 
@@ -210,12 +207,6 @@ function downloads () {
   echo -e "\e[32mDownload prerequisite software\e[39m"
 
   [ -d $STRATOS_PACK_PATH ] || mkdir $STRATOS_PACK_PATH
-
-  if [ ! -e $STRATOS_PACK_PATH/$(basename $WSO2_CEP_URL) ]
-  then
-     echo "Downloading $WSO2_CEP_URL"
-     wget -N -nv -P $STRATOS_PACK_PATH $WSO2_CEP_URL
-  fi
 
   if [ ! -e $STRATOS_PACK_PATH/$(basename $MYSQLJ_URL) ]
   then
@@ -298,6 +289,7 @@ function puppet_base_setup() {
 
   [ -d /etc/puppet/modules/agent/files ] || sudo mkdir -p /etc/puppet/modules/agent/files
   [ -d /etc/puppet/modules/java/files ] || sudo mkdir -p /etc/puppet/modules/java/files
+  [ -d /etc/puppet/modules/tomcat/files ] || sudo mkdir -p /etc/puppet/modules/tomcat/files
 
   #if [ "$(arch)" == "x86_64" ]
   #then
@@ -348,6 +340,12 @@ function puppet_base_setup() {
   # make the JDK available to puppet
   sudo cp -f ${STRATOS_PACK_PATH}/${JDK} /etc/puppet/modules/java/files/
 
+  # download tomcat
+  wget -N -nv -c -P $STRATOS_PACK_PATH $TOMCAT_URL
+
+  # make tomcat available to puppet
+  sudo cp -f ${STRATOS_PACK_PATH}/$(basename $TOMCAT_URL) /etc/puppet/modules/tomcat/files/
+
   # add unqualified hostname to /etc/hosts because that isn't done by puppetinstall
   sudo sed -i -e "s@puppet.${DOMAINNAME}\s*\$@puppet.${DOMAINNAME} puppet@g" /etc/hosts
 
@@ -379,8 +377,6 @@ function puppet_stratos_setup() {
   sudo sed -i -E "s:(\s*[$]local_package_dir.*=).*$:\1 \"$STRATOS_PACK_PATH\":g" /etc/puppet/manifests/nodes.pp
   sudo sed -i -E "s:(\s*[$]mb_ip.*=).*$:\1 \"$IP_ADDR\":g" /etc/puppet/manifests/nodes.pp
   sudo sed -i -E "s:(\s*[$]mb_port.*=).*$:\1 \"$MB_PORT\":g" /etc/puppet/manifests/nodes.pp
-  sudo sed -i -E "s:(\s*[$]cep_ip.*=).*$:\1 \"$IP_ADDR\":g" /etc/puppet/manifests/nodes.pp
-  sudo sed -i -E "s:(\s*[$]cep_port.*=).*$:\1 \"$CEP_PORT\":g" /etc/puppet/manifests/nodes.pp
   # TODO move hardcoded strings to variables
   sudo sed -i -E "s:(\s*[$]truststore_password.*=).*$:\1 \"wso2carbon\":g" /etc/puppet/manifests/nodes.pp
 
@@ -408,16 +404,27 @@ function installer() {
         sudo rm -rf $STRATOS_PATH
         mysql -u root -p'password' -e 'drop database if exists userstore;' mysql
     else
-        echo "Can't install on top of existing $STRATOS_HOME folder.  Exiting."
+        echo "Can't install on top of existing $STRATOS_PATH folder.  Exiting."
         exit 1
     fi
   fi
 
-  cp -rpf $STRATOS_SOURCE_PATH/tools/stratos-installer/* $STRATOS_SETUP_PATH/
-  cp -f $STRATOS_SOURCE_PATH/products/stratos/modules/distribution/target/apache-stratos-${STRATOS_VERSION}.zip $STRATOS_PACK_PATH/
+  # TODO use sed line replacement
+  grep -q '^export STRATOS_CLI_HOME' ~/.profile || echo "export STRATOS_CLI_HOME=$STRATOS_CLI_HOME" >> ~/.profile
+  . ~/.profile
+  export STRATOS_CLI_HOME
 
-  sudo cp -f $STRATOS_SOURCE_PATH/products/cartridge-agent/modules/distribution/target/apache-stratos-cartridge-agent-${STRATOS_VERSION}-bin.zip /etc/puppet/modules/agent/files/
-  sudo cp -f $STRATOS_SOURCE_PATH/products/load-balancer/modules/distribution/target/apache-stratos-load-balancer-${STRATOS_VERSION}.zip /etc/puppet/modules/lb/files/
+  # extract cli zip file
+  cli_file=$(find $STRATOS_SOURCE_PATH/products/stratos-cli/distribution/target/apache-stratos-cli-*.zip)
+  rm -rf $STRATOS_PATH/$(basename $cli_file)
+  unzip $cli_file -d $STRATOS_PATH
+  STRATOS_CLI_HOME=$STRATOS_PATH/$(basename $cli_file)
+ 
+  cp -rpf $STRATOS_SOURCE_PATH/tools/stratos-installer/* $STRATOS_SETUP_PATH/
+  cp -f $STRATOS_SOURCE_PATH/products/stratos/modules/distribution/target/apache-stratos-*.zip $STRATOS_PACK_PATH/
+
+  sudo cp -f $STRATOS_SOURCE_PATH/products/cartridge-agent/modules/distribution/target/apache-stratos-cartridge-agent-*-bin.zip /etc/puppet/modules/agent/files/
+  sudo cp -f $STRATOS_SOURCE_PATH/products/load-balancer/modules/distribution/target/apache-stratos-load-balancer-*.zip /etc/puppet/modules/lb/files/
 
   if [ ! -e $STRATOS_PACK_PATH/$(basename $ACTIVEMQ_URL) ]
   then
@@ -561,6 +568,8 @@ function kill_servers() {
     kill -SIGINT $stratos_pid
   done
 
+  echo > $STRATOS_PATH/apache-stratos-default/wso2carbon.pid
+
   # turn error handling back on
   trap 'error ${LINENO}' ERR
 
@@ -621,6 +630,7 @@ function development_environment() {
    echo 'mode: off' > ~/.xscreensaver
 
    # switch off update manager popup
+   # FIXME: this doesn't seem to work
    sudo sed -i 's/NoDisplay=true/NoDisplay=false/g' /etc/xdg/autostart/*.desktop
 
    cd $STRATOS_SOURCE_PATH
