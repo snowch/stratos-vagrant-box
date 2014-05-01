@@ -105,7 +105,7 @@ SCRIPT
 $openstack_script = <<SCRIPT
 # copy openstack scripts and demo keypair
 ln -sf /vagrant/openstack-docker/openstack-docker.sh /home/vagrant/openstack-docker.sh
-ln -sf /vagrant/openstack-qemu/openstack-demo-keypair.pem /home/vagrant/openstack-demo-keypair.pem
+ln -sf /vagrant/openstack-docker/openstack-demo-keypair.pem /home/vagrant/openstack-demo-keypair.pem
 
 [ -d /vagrant/downloads/openstack-docker ] || mkdir -p /vagrant/downloads/openstack-docker
 

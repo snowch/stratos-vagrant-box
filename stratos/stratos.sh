@@ -278,6 +278,8 @@ function puppet_base_setup() {
 
   sudo apt-get update
   sudo apt-get install -y git
+  # bc is required - see https://github.com/thilinapiy/puppetinstall/issues/6 
+  sudo apt-get install -y bc
 
   # FIXME make this idempotent - i.e. same result each time it is run
   if [ ! -d puppetinstall ]

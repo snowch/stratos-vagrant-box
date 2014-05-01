@@ -24,7 +24,7 @@ fi
 
 tmp_file=$(mktemp)
 
-cp /vagrant/openstack-qemu/example_cartridge.json $tmp_file
+cp /vagrant/tests/example_cartridge.json $tmp_file
 
 # replace the placeholder cartridge id with the actual cartridge id
 sed -i "s/____CHANGE_ME____/$image_id/g" $tmp_file
@@ -35,11 +35,11 @@ cli_jar=$(find $CLI_HOME/org.apache.stratos.cli-*-Tool.jar)
 expect <<EOF
 spawn "/usr/bin/java" "-jar" "$cli_jar" "-username" "admin" "-p" "admin"
 expect "stratos>"
-send "deploy-partition -p /vagrant/openstack-qemu/example_partition.json\r"
+send "deploy-partition -p /vagrant/tests/example_partition.json\r"
 expect "stratos>"
-send "deploy-autoscaling-policy -p /vagrant/openstack-qemu/example_autoscale_policy.json\r"
+send "deploy-autoscaling-policy -p /vagrant/tests/example_autoscale_policy.json\r"
 expect "stratos>"
-send "deploy-deployment-policy -p /vagrant/openstack-qemu/example_deployment_policy.json\r"
+send "deploy-deployment-policy -p /vagrant/tests/example_deployment_policy.json\r"
 expect "stratos>"
 send "deploy-cartridge -p $tmp_file\r"
 expect "stratos>"
@@ -47,6 +47,7 @@ send "subscribe-cartridge php php111 -r https://github.com/nirmal070125/phptest.
 expect "stratos>"
 send "sync php111\r"
 expect "stratos>"
+send "exit\r"
 EOF
 
 rm -f $tmp_file
@@ -71,16 +72,17 @@ function wait_for_ssh_port() {
      sleep 20s
      echo "Waiting for ssh port to open on $instance_ip"
    done
-
-   echo "Ssh port open on $instance_ip"
 }
 
+echo "Sleeping for 3m to give Stratos a chance to start the instance."
 sleep 3m
 
 instance_ip=$(nova list | grep "php111" | cut -d'|' -f7 | cut -d'=' -f2 | cut -d',' -f1 | tr -d ' ')
 
 
-echo "============================================"
 echo "Waiting for SSH port to open on $instance_ip"
 wait_for_ssh_port $instance_ip
+echo "============================================"
+echo "Instance started."
+echo "Ssh port open on $instance_ip"
 echo "============================================"

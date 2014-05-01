@@ -5,8 +5,3 @@
 
 export STRATOS_SRC_VERSION="4.0.0-incubating"
 
-# The Maven Version string - this is used
-# by scripts installing stratos
-
-export STRATOS_VERSION="4.0.0-incubating"
-
