@@ -32,6 +32,13 @@ To setup stratos and openstack:
 - See stratos.log for Stratos and Openstack setup output
 - See test.log for basic provisioning output
 
+#### Stratos Version
+
+The environment checks out and builds ```4.0.0-incubating``` version. If you want to change the version:
+
+- ```cp stratos_version.conf.example stratos_version.conf```
+- Edit the ```STRATOS_SRC_VERSION``` value (e.g. master)
+
 #### Issues
 
 - This environment will not work if you access the internet through a Proxy (transparent proxies should be ok).
