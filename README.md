@@ -24,9 +24,8 @@ To setup stratos and openstack:
 
 - Install Vagrant using the above link
 - Install Virtualbox using the above link
-- Clone this project: ```git clone git@github.com:snowch/devcloud-script.git```
-- Change into the project directory: ```cd devcloud-script```
-- Change into the project directory: ```git checkout openstack-docker```
+- Clone this project: ```git clone git@github.com:snowch/stratos-vagrant-box.git```
+- Change into the project directory: ```cd stratos-vagrant-box```
 - Run ```./new_statos_and_openstack_docker.sh```
 - Access Stratos Console: https://192.168.56.5:9443/console - admin/admin
 - Access Openstack Console: http://192.168.92.30 - admin/g
