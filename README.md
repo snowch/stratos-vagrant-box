@@ -29,6 +29,7 @@ To setup stratos and openstack:
 - Run ```./new_statos_and_openstack_docker.sh```
 - Access Stratos Console: https://192.168.56.5:9443/console - admin/admin
 - Access Openstack Console: http://192.168.92.30 - admin/g
+- See stratos.log for Stratos and Openstack setup output
 - See test.log for basic provisioning output
 
 #### Issues
