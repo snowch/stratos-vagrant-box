@@ -80,10 +80,13 @@ end
 
 $stratos_script = <<SCRIPT
 # copy example stratos version conf file if it doesn't already exist
-[ -e stratos_version.conf ] || cp /vagrant/stratos_version.conf.example /home/vagrant/stratos_version.conf
+if [ ! -e /vagrant/stratos_version.conf ]; then
+  cp /vagrant/stratos_version.conf.example /vagrant/stratos_version.conf
+  sed -i '1,2d' /vagrant/stratos_version.conf
+fi
+ln -sf /vagrant/stratos_version.conf /home/vagrant/stratos_version.conf
 
 # remove the example text from the first two lines
-sed -i '1,2d' stratos_version.conf
 
 # copy stratos script
 ln -sf /vagrant/stratos/stratos.sh /home/vagrant/stratos.sh
