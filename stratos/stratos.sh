@@ -224,7 +224,7 @@ function fix_git_tls_bug() {
     # we have already setup git
     return
   fi
-  sudo apg-et update
+  sudo apt-get update
   sudo apt-get install -y build-essential fakeroot dpkg-dev
   mkdir ~/git-openssl
   cd ~/git-openssl
