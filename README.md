@@ -47,4 +47,5 @@ The environment checks out and builds ```4.0.0-incubating``` version. If you wan
 #### Issues
 
 - This environment will not work if you access the internet through a Proxy (transparent proxies should be ok).
+- See github [issues page](https://github.com/snowch/stratos-vagrant-box/issues) for a list of known issues.
 
