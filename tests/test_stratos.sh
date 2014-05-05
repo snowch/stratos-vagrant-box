@@ -29,7 +29,7 @@ cp /vagrant/tests/example_cartridge.json $tmp_file
 # replace the placeholder cartridge id with the actual cartridge id
 sed -i "s/____CHANGE_ME____/$image_id/g" $tmp_file
 
-cli_jar=$(find $CLI_HOME/org.apache.stratos.cli-*-Tool.jar)
+cli_jar=$(find $CLI_HOME/org.apache.stratos.cli-*.jar)
 
 # to some provisioning with the stratos CLI
 expect <<EOF
