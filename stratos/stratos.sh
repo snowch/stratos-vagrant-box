@@ -425,7 +425,7 @@ function installer() {
   cp -rpf $STRATOS_SOURCE_PATH/tools/stratos-installer/* $STRATOS_SETUP_PATH/
   cp -f $STRATOS_SOURCE_PATH/products/stratos/modules/distribution/target/apache-stratos-*.zip $STRATOS_PACK_PATH/
 
-  sudo cp -f $STRATOS_SOURCE_PATH/products/cartridge-agent/modules/distribution/target/apache-stratos-cartridge-agent-*-bin.zip /etc/puppet/modules/agent/files/
+  sudo cp -f $STRATOS_SOURCE_PATH/products/cartridge-agent/modules/distribution/target/apache-stratos-cartridge-agent-*.zip /etc/puppet/modules/agent/files/
   sudo cp -f $STRATOS_SOURCE_PATH/products/load-balancer/modules/distribution/target/apache-stratos-load-balancer-*.zip /etc/puppet/modules/lb/files/
 
   if [ ! -e $STRATOS_PACK_PATH/$(basename $ACTIVEMQ_URL) ]
