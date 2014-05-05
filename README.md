@@ -4,7 +4,7 @@
 
 #### Overview
 
-This project contains scripts to automate the setup of Ubuntu 13.10 to support Stratos, and to also automate the setup of puppet and the Stratos runtime.  This environment can also setup a local Openstack environment for those users who want minimal configuration of an IaaS to try out Stratos.
+This project contains scripts to automate the setup of Ubuntu 13.04 to support Stratos, and to also automate the setup of puppet and the Stratos runtime.  This environment can also setup a local Openstack environment for those users who want minimal configuration of an IaaS to try out Stratos.
 
 #### Pre-requisites
 
@@ -12,11 +12,16 @@ This environment uses Vagrant [(download)](http://www.vagrantup.com/downloads.ht
 
 **WARNING:** Make sure you install Vagrant from the above link and not your distribution's vagrant package.
 
+- The host machine must:
+  - not be a virtual machine
+  - be an OS supported by Vagrant and Virtualbox (Linux, OS X, Windows)
+  - have at least 5Gb free memory
+  - have 64 bit architecture
+
 Tested with:
 
 - Vagrant 1.4.2
 - Virtualbox 4.3.8r92456
-- At least 5Gb free memory
 
 #### Quick Start
 
