@@ -40,10 +40,11 @@ Vagrant.configure("2") do |config|
        config.cache.scope = :box
     end
 
-    config.vm.synced_folder File.expand_path("./m2_repo"),
-	"/home/vagrant/.m2/", 
-        :create => true,
-	:mount_option => "dmode=777,fmode=666"
+# Using a synced folder can break the build due to the maven file name lengths
+#    config.vm.synced_folder File.expand_path("./m2_repo"),
+#	"/home/vagrant/.m2/", 
+#        :create => true,
+#	:mount_option => "dmode=777,fmode=666"
     
     # put stratos on the same private network as cloudstack so they can talk to each other
     config.vm.network :private_network, :ip => STRATOS_IP
@@ -108,7 +109,11 @@ SCRIPT
 $openstack_script = <<SCRIPT
 # copy openstack scripts and demo keypair
 ln -sf /vagrant/openstack-docker/openstack-docker.sh /home/vagrant/openstack-docker.sh
-ln -sf /vagrant/openstack-docker/openstack-demo-keypair.pem /home/vagrant/openstack-demo-keypair.pem
+
+if [ ! -e /home/vagrant/openstack-demo-keypair.pem ]; then
+  cp -f /vagrant/openstack-docker/openstack-demo-keypair.pem /home/vagrant/openstack-demo-keypair.pem
+  chmod 600 /home/vagrant/openstack-demo-keypair.pem
+fi
 
 [ -d /vagrant/downloads/openstack-docker ] || mkdir -p /vagrant/downloads/openstack-docker
 
