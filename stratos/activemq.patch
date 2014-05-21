@@ -1,0 +1,26 @@
+--- apache-activemq-5.9.1/bin/activemq	2014-04-01 00:13:54.000000000 +0000
++++ /etc/init.d/activemq	2014-05-21 14:52:59.278542807 +0000
+@@ -394,14 +394,14 @@
+    fi
+    # Execute java binary
+    if [ -n "$PIDFILE" ] && [ "$PIDFILE" != "stop" ];then
+-      $EXEC_OPTION $DOIT_PREFIX "$JAVACMD $ACTIVEMQ_OPTS $ACTIVEMQ_DEBUG_OPTS \
++      nohup $DOIT_PREFIX "$JAVACMD $ACTIVEMQ_OPTS $ACTIVEMQ_DEBUG_OPTS \
+               -Dactivemq.classpath=\"${ACTIVEMQ_CLASSPATH}\" \
+               -Dactivemq.home=\"${ACTIVEMQ_HOME}\" \
+               -Dactivemq.base=\"${ACTIVEMQ_BASE}\" \
+               -Dactivemq.conf=\"${ACTIVEMQ_CONF}\" \
+               -Dactivemq.data=\"${ACTIVEMQ_DATA}\" \
+               $ACTIVEMQ_CYGWIN \
+-              -jar \"${ACTIVEMQ_HOME}/bin/activemq.jar\" $COMMANDLINE_ARGS >/dev/null 2>&1 &
++              -jar \"${ACTIVEMQ_HOME}/bin/activemq.jar\" $COMMANDLINE_ARGS >/dev/null 2>&1 </dev/null &
+               RET=\"\$?\"; APID=\"\$!\";
+               echo \$APID > $PIDFILE;
+               echo \"INFO: pidfile created : '$PIDFILE' (pid '\$APID')\";exit \$RET" $DOIT_POSTFIX
+@@ -693,4 +693,4 @@
+     ;;
+   *)
+     invoke_task
+-esac
+\ No newline at end of file
++esac

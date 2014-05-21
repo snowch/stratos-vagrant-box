@@ -393,6 +393,8 @@ function installer() {
 
   pushd $PWD
 
+  kill_servers
+
   [ -d $STRATOS_SETUP_PATH ] || mkdir $STRATOS_SETUP_PATH
   [ -d /etc/puppet/modules/agent/files/ ] || sudo mkdir -p /etc/puppet/modules/agent/files/
   [ -d /etc/puppet/modules/agent/files/activemq ] || sudo mkdir -p /etc/puppet/modules/agent/files/activemq
@@ -526,6 +528,12 @@ function installer() {
   [ -d $STRATOS_PATH ] || mkdir $STRATOS_PATH
   echo '' | sudo ./setup.sh -p "default" -s
 
+  # fix bug where stratos can't be started over ssh connection
+  sed -e 's:\(nohup.*\)args >:\1args < /dev/null >:g' $STRATOS_PATH/apache-stratos-default/bin/stratos.sh
+
+  # fix bug where activemq can't be started over ssh connection
+  patch $STRATOS_PATH/apache-activemq-5.9.1/bin/activemq < /vagrant/stratos/activemq.patch
+
   popd
 }
 
@@ -555,14 +563,11 @@ function kill_servers() {
 
   stratos_pid=$(cat $STRATOS_PATH/apache-stratos-default/wso2carbon.pid)
   
-  # ignore errors
-  trap - ERR
-
   count=0
   while ( $progname -t | grep -q 'Stratos is running' );  do 
     echo 'Waiting for Stratos to stop running.'
     let "count=count+1"
-    if [[ $count -eq 20 ]]; then
+    if [[ $count -eq 5 ]]; then
       kill -SIGKILL $stratos_pid
       break
     fi 
