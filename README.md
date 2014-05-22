@@ -31,9 +31,18 @@ To setup stratos and openstack:
 - Install Virtualbox using the above link
 - Clone this project: ```git clone git@github.com:snowch/stratos-vagrant-box.git```
 - Change into the project directory: ```cd stratos-vagrant-box```
-- Run ```./new_statos_and_openstack_docker.sh```
+- If you want a Stratos runtime, execute: 
+  - ```./new_statos_and_openstack_docker.sh``` or ```./new_statos_and_openstack_docker.bat```
+- If you want a Stratos development environment including eclipse, execute: 
+  - ```./new_statos_and_openstack_docker_with_desktop.sh``` or ```./new_statos_and_openstack_docker_with_desktop.bat``` 
 - Access Stratos Console: https://192.168.56.5:9443/console - admin/admin
 - Access Openstack Console: http://192.168.92.30 - admin/g
+- You can ssh into your environment using
+  - `vagrant ssh`
+- If you created a development environment, you can access it using rdesktop or Windows Remote Desktop
+  - IP: 192.168.56.5
+  - Username: vagrant
+  - Password: vagrant
 - See stratos.log for Stratos and Openstack setup output
 - See test.log for basic provisioning output
 
