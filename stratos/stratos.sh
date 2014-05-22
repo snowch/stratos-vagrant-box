@@ -529,7 +529,7 @@ function installer() {
   echo '' | sudo ./setup.sh -p "default" -s
 
   # fix bug where stratos can't be started over ssh connection
-  sed -e 's:\(nohup.*\)args >:\1args < /dev/null >:g' $STRATOS_PATH/apache-stratos-default/bin/stratos.sh
+  sed -i 's:\(nohup.*\)args >:\1args < /dev/null >:g' $STRATOS_PATH/apache-stratos-default/bin/stratos.sh
 
   # fix bug where activemq can't be started over ssh connection
   patch $STRATOS_PATH/apache-activemq-5.9.1/bin/activemq < /vagrant/stratos/activemq.patch
