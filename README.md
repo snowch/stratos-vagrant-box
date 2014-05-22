@@ -20,7 +20,7 @@ This environment uses Vagrant [(download)](http://www.vagrantup.com/downloads.ht
 
 Tested with:
 
-- Vagrant 1.4.2
+- Vagrant 1.6.2
 - Virtualbox 4.3.8r92456
 
 #### Quick Start
