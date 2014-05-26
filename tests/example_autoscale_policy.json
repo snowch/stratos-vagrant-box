@@ -3,12 +3,6 @@
   "loadThresholds": {
     "requestsInFlight": {
       "average": 50
-    },
-    "memoryConsumption": {
-      "average": 70
-    },
-    "loadAverage": {
-      "average": 100
     }
   }
 }
