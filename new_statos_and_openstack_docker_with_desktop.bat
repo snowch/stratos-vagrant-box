@@ -54,7 +54,6 @@ IF ERRORLEVEL 1 (
    EXIT /b %errorlevel%
 )
 
-# start stratos
 echo "Starting Stratos"
 vagrant ssh -c "./stratos.sh -s && sleep 5m" >> stratos.log 2>&1
 IF ERRORLEVEL 1 (
