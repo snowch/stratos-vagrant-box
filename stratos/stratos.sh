@@ -38,7 +38,7 @@ source ${HOME}/stratos_version.conf
 # Stratos folders
 STRATOS_PACK_PATH="${HOME}/stratos-packs"
 STRATOS_SETUP_PATH="${HOME}/stratos-installer"
-STRATOS_SOURCE_PATH="${HOME}/incubator-stratos"
+STRATOS_SOURCE_PATH="${HOME}/stratos-source"
 STRATOS_PATH="${HOME}/stratos"
 
 # ActiveMQ 5.9.1 location.  Note: only 5.9.1 is supported by this script
@@ -706,7 +706,7 @@ function checkout() {
 
   if [ ! -d $STRATOS_SOURCE_PATH ]
   then
-     git clone https://git-wip-us.apache.org/repos/asf/incubator-stratos.git $STRATOS_SOURCE_PATH
+     git clone https://git-wip-us.apache.org/repos/asf/stratos.git $STRATOS_SOURCE_PATH
   else
      cd $STRATOS_SOURCE_PATH
      git checkout master
@@ -724,7 +724,7 @@ function maven_clean_install () {
    echo -e "\e[32mRunning 'mvn clean install'.\e[39m"
    
    pushd $PWD
-   cd ${HOME}/incubator-stratos
+   cd $STRATOS_SOURCE_PATH
    
    mvn clean install -DskipTests
    popd
@@ -738,7 +738,7 @@ function force_clean () {
    echo
    read -p "Please close eclipse, stop any maven jobs and press [Enter] key to continue."
    
-   cd ${HOME}/incubator-stratos
+   cd $STRATOS_SOURCE_PATH
    mvn clean
    
    rm -rf ${HOME}/workspace-stratos

@@ -48,7 +48,7 @@ To setup stratos and openstack:
 
 #### Stratos Version
 
-The environment checks out and builds ```4.0.0-incubating``` version. If you want to change the version:
+The environment checks out and builds ```4.0.0``` version. If you want to change the version:
 
 - ```cp stratos_version.conf.example stratos_version.conf```
 - Edit the ```STRATOS_SRC_VERSION``` value (e.g. master)
