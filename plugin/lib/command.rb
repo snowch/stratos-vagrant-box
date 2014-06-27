@@ -10,10 +10,14 @@ module Stratos
         o.banner = "Usage: vagrant script scriptname.rb"
       end
       argv = parse_options(opts)
+
       # TODO check if scriptname not provided and usage usage 
       puts argv
 
-      require File.expand_path(File.dirname(__FILE__) + "/../#{argv}")
+      vagrant_output = `vagrant help`.split( /\n/ )
+
+      puts vagrant_output[0]
+
       return 0
     end
   end

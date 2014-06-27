@@ -31,6 +31,8 @@ To setup stratos and openstack:
 - Install Virtualbox using the above link
 - Clone this project: ```git clone git@github.com:snowch/stratos-vagrant-box.git```
 - Change into the project directory: ```cd stratos-vagrant-box```
+- Execute the command: ```vagrant plugin uninstall stratos``` (ignore command output if it is already uninstalled)
+- Execute the command: ```vagrant plugin install plugin/pkg/stratos-x.y.z.gem``` (replace x.y.z with the actual version)
 - If you want a Stratos runtime, execute: 
   - ```./new_statos_and_openstack_docker.sh``` or ```./new_statos_and_openstack_docker.bat```
 - If you want a Stratos development environment including eclipse, execute: 
