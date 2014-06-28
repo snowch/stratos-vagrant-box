@@ -11,15 +11,34 @@ module Stratos
       end
       argv = parse_options(opts)
 
-      puts argv
+      # TODO error handling and retries
+      # TODO print vagrant configuration such as stratos branch
 
-      IO.popen "vagrant ssh -c './stratos.sh -m'" do |io|
+      run_command "vagrant destroy -f" # TODO is there a vagrant API for this?
+      run_command "vagrant up"         # Vagrant API?
+
+      run_command "vagrant ssh -c './stratos.sh -f'" 
+
+      # TODO command line option for desktop 
+      # run_command "vagrant ssh -c './stratos.sh -d'" 
+      run_command "vagrant ssh -c './openstack-docker.sh -o'" 
+      run_command "vagrant reload"     # Vagrant API?
+
+      run_command "vagrant ssh -c './openstack-docker.sh -o && ./openstack-docker.sh -d'"
+      run_command "vagrant ssh -c './stratos.sh -s'"
+
+      sleep (5*60) # 5 mins
+      run_command "vagrant ssh -c '. /vagrant/tests/test_stratos.sh'"
+
+      return 0
+    end
+
+    def run_command( command )
+      IO.popen command do |io|
         io.each do |line|
           puts line.tr("\n","")
         end
       end
-
-      return 0
     end
   end
 end
