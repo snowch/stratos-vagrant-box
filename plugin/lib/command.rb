@@ -11,12 +11,13 @@ module Stratos
       end
       argv = parse_options(opts)
 
-      # TODO check if scriptname not provided and usage usage 
       puts argv
 
-      vagrant_output = `vagrant help`.split( /\n/ )
-
-      puts vagrant_output[0]
+      IO.popen "vagrant ssh -c './stratos.sh -m'" do |io|
+        io.each do |line|
+          puts line.tr("\n","")
+        end
+      end
 
       return 0
     end

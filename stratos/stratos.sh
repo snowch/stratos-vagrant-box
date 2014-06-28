@@ -353,6 +353,8 @@ function puppet_base_setup() {
 
   sudo sh -c "echo \"*.$DOMAINNAME\" > /etc/puppet/autosign.conf"
 
+  echo -e "\e[32mFinished setting up puppet master base\e[39m"
+
   popd
 
 }
