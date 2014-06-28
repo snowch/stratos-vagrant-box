@@ -8,5 +8,3 @@ source ~/.rvm/scripts/rvm
 echo "source ~/.rvm/scripts/rvm" >> ~/.bashrc
 rvm install 2.1.2
 gem install bundle
-cd /vagrant/plugin/
-bundle exec rake build
