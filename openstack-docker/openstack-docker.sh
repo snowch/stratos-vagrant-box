@@ -162,26 +162,13 @@ function openstack_setup() {
    grep -q 'modprobe aufs' /etc/rc.local
    if [ $? == 1 ]
    then
-     sudo sh -c "cat > /etc/rc.local" <<EOF
-#!/bin/sh -e
-#
-# rc.local
-#
-# This script is executed at the end of each multiuser runlevel.
-# Make sure that the script will "exit 0" on success or any other
-# value on error.
-#
-# In order to enable or disable this script just change the execution
-# bits.
-#
-# By default this script does nothing.
-
+      read -d '' REPLACE << EOF
 modprobe aufs
 sudo killall dnsmasq
 sudo chown vagrant:docker /var/run/docker.sock
-
 exit 0
 EOF
+     sudo perl -i.bak -pe 's~^exit 0~'"${REPLACE}"'~g' /etc/rc.local
    fi
    set -e
 
