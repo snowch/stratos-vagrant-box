@@ -25,7 +25,6 @@ module Stratos
       run_command "vagrant reload"     # Vagrant API?
 
       run_command "vagrant ssh -c './openstack-docker.sh -o && ./openstack-docker.sh -d'"
-      run_command "vagrant ssh -c './stratos.sh -s'"
 
       sleep (5*60) # 5 mins
       run_command "vagrant ssh -c '. /vagrant/tests/test_stratos.sh'"
@@ -38,6 +37,8 @@ module Stratos
         io.each do |line|
           puts line.tr("\n","")
         end
+        io.close
+        abort "Error running: #{command}" if $?.to_i != 0 
       end
     end
   end

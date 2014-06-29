@@ -536,6 +536,16 @@ function installer() {
   # fix bug where activemq can't be started over ssh connection
   patch $STRATOS_PATH/apache-activemq-5.9.1/bin/activemq < /vagrant/stratos/activemq.patch
 
+   grep -q 'su -c "/home/vagrant/stratos.sh -s" -s /bin/sh vagrant' /etc/rc.local
+   if [ $? == 1 ]
+   then
+     read -d '' REPLACE << EOF
+su -c "/home/vagrant/stratos.sh -s" -s /bin/sh vagrant
+exit 0
+EOF
+     sudo perl -i.bak -pe 's~^exit 0~'"${REPLACE}"'~g' /etc/rc.local
+  fi
+
   popd
 }
 
