@@ -37,6 +37,21 @@ module Stratos
 
       if argv.nil?
          # help gets printed by vagrant code
+         # this gets appended under the help:
+         puts "
+ Additional Information
+ ======================
+
+ - Access Stratos Console: https://192.168.56.5:9443/console - admin/admin
+ - Access Openstack Console: http://192.168.92.30 - admin/g
+ - You can ssh into your environment using 'vagrant ssh'
+ - If you created a development environment, you can access it using rdesktop or Windows Remote Desktop
+    - IP: 192.168.56.5
+    - Username: vagrant
+    - Password: vagrant
+ - See stratos.log for Stratos and Openstack setup output
+ - See test.log for basic provisioning output TODO #{Dir.pwd}
+" 
          return 0
       end
 
