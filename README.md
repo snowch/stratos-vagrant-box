@@ -32,10 +32,7 @@ To setup stratos and openstack:
 - Clone this project: ```git clone git@github.com:snowch/stratos-vagrant-box.git```
 - Change into the project directory: ```cd stratos-vagrant-box```
 - Execute the command: ```vagrant plugin install plugin/pkg/stratos-x.y.z.gem``` (replace x.y.z with the actual version)
-- If you want a Stratos runtime, execute: 
-  - ```./new_statos_and_openstack_docker.sh``` or ```./new_statos_and_openstack_docker.bat```
-- If you want a Stratos development environment including eclipse, execute: 
-  - ```./new_statos_and_openstack_docker_with_desktop.sh``` or ```./new_statos_and_openstack_docker_with_desktop.bat``` 
+- Execute the command: ```vagrant stratos --help``` - follow the instructions printed by help
 - Access Stratos Console: https://192.168.56.5:9443/console - admin/admin
 - Access Openstack Console: http://192.168.92.30 - admin/g
 - You can ssh into your environment using

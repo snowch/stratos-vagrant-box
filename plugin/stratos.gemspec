@@ -14,7 +14,22 @@ Gem::Specification.new do |gem|
 
   gem.add_development_dependency "rake"
 
-  gem.files         = `git ls-files`.split($/)
+  gem.files         = [".gitignore", 
+			"Gemfile", 
+			"LICENSE", 
+			"LICENSE.txt", 
+			"README.md", 
+			"Rakefile", 
+			"build_plugin.sh", 
+			"install_ruby_plugin_dev_env.sh", 
+			"lib/command.rb", 
+			"lib/command_util.rb", 
+			"lib/stratos.rb", 
+			"lib/stratos/version.rb", 
+			"pkg/stratos-0.0.1.gem", 
+			"stratos.gemspec", 
+			"test"
+			]
   gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.require_paths = ["lib"]
