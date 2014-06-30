@@ -1,1 +1,13 @@
 require "bundler/gem_tasks"
+
+# TODO
+# Tests are disabled - they are failing because they need the Vagrant Spec projecgt
+
+#require 'rake/testtask'
+
+#Rake::TestTask.new do |t|
+#  t.libs << 'test'
+#end
+
+#desc "Run tests"
+#task :default => :test
