@@ -31,6 +31,7 @@ To setup stratos and openstack:
 - Install Virtualbox using the above link
 - Clone this project: ```git clone git@github.com:snowch/stratos-vagrant-box.git```
 - Change into the project directory: ```cd stratos-vagrant-box```
+- Set the version of Stratos you want to checkout see [Stratos Version](#stratos-version), below.
 - Execute the command: ```vagrant plugin install plugin/pkg/stratos-x.y.z.gem``` (replace x.y.z with the actual version)
 - Execute the command: ```vagrant stratos --help``` 
 - Follow the instructions printed by help
