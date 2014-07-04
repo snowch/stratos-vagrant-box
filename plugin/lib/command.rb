@@ -14,9 +14,9 @@ module Stratos
     def execute
       options = {}
       opts = OptionParser.new do |o|
-        o.banner = "Usage: vagrant stratos [--help] [-a|--all] [-c|--create] [-w|--with-desktop] [-d|--destroy]"
+        o.banner = "Usage: vagrant stratos [--help] [-a|--all] [-c|--create] [-w|--desktop] [-o|--openstack] [-d|--destroy]"
 
-        o.on("-a", "--all", "Equivalent to running: 'vagrant stratos -c -w -d'") do |v|
+        o.on("-a", "--all", "Equivalent to running: 'vagrant stratos --create --desktop --openstack --destroy'") do |v|
           options[:newenv] = true
           options[:desktop] = true
           options[:destroy] = true
@@ -24,8 +24,11 @@ module Stratos
         o.on("-c", "--create", "Create a new Stratos environment") do |v|
           options[:newenv] = v
         end
-        o.on("-w", "--with-desktop", "Add Desktop to Stratos Environment") do |v|
+        o.on("-w", "--desktop", "Add Desktop to Stratos Environment") do |v|
           options[:desktop] = v
+        end
+        o.on("-o", "--openstack", "Install Openstack (devstack) environment") do |v|
+          options[:openstack] = v
         end
         o.on("-d", "--destroy", "Destroy previous Stratos environment") do |v|
           options[:destroy] = v
@@ -72,15 +75,17 @@ module Stratos
       run_command "vagrant ssh -c './stratos.sh -p'" 
       run_command "vagrant ssh -c './stratos.sh -n'" 
   
-      if options[:destroy]
+      if options[:desktop]
          run_command "vagrant ssh -c './stratos.sh -d'" 
       end
 
-      run_command "vagrant ssh -c './openstack-docker.sh -o'" 
-      run_command "vagrant reload"     # Vagrant API?
+      if options[:openstack]
+         run_command "vagrant ssh -c './openstack-docker.sh -o'" 
+         run_command "vagrant reload"     # Vagrant API?
 
-      run_command "vagrant ssh -c './openstack-docker.sh -o && ./openstack-docker.sh -d'"
-      run_command "vagrant ssh -c '. /vagrant/tests/test_stratos.sh'"
+         run_command "vagrant ssh -c './openstack-docker.sh -o && ./openstack-docker.sh -d'"
+         run_command "vagrant ssh -c '. /vagrant/tests/test_stratos.sh'"
+      end
 
       return 0
     end

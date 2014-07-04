@@ -365,6 +365,8 @@ function puppet_stratos_setup() {
 
   echo -e "\e[32mSetting up puppet master for Stratos\e[39m"
 
+  GIT_BRANCH=$(git --git-dir /home/vagrant/stratos-source/.git symbolic-ref --short HEAD)
+
   pushd $PWD
 
   # Stratos specific puppet setup
@@ -377,14 +379,20 @@ function puppet_stratos_setup() {
   # WARNING: currently Stratos only supports 64 bit cartridges
   JAVA_ARCH="x64"
 
-  sudo sed -i -E "s:(\s*[$]java_name.*=).*$:\1 \"jdk1.7.0_51\":g" /etc/puppet/manifests/nodes.pp
-  sudo sed -i -E "s:(\s*[$]java_distribution.*=).*$:\1 \"jdk-7u51-linux-${JAVA_ARCH}.tar.gz\":g" /etc/puppet/manifests/nodes.pp
+  if [[ $GIT_BRANCH == "4.0"* ]]; then
+    PUPPET_FILE=/etc/puppet/manifests/nodes.pp
+  else
+    PUPPET_FILE=/etc/puppet/manifests/base.pp
+  fi
 
-  sudo sed -i -E "s:(\s*[$]local_package_dir.*=).*$:\1 \"$STRATOS_PACK_PATH\":g" /etc/puppet/manifests/nodes.pp
-  sudo sed -i -E "s:(\s*[$]mb_ip.*=).*$:\1 \"$IP_ADDR\":g" /etc/puppet/manifests/nodes.pp
-  sudo sed -i -E "s:(\s*[$]mb_port.*=).*$:\1 \"$MB_PORT\":g" /etc/puppet/manifests/nodes.pp
+  sudo sed -i -E "s:(\s*[$]java_name.*=).*$:\1 \"jdk1.7.0_51\":g" $PUPPET_FILE
+  sudo sed -i -E "s:(\s*[$]java_distribution.*=).*$:\1 \"jdk-7u51-linux-${JAVA_ARCH}.tar.gz\":g" $PUPPET_FILE
+
+  sudo sed -i -E "s:(\s*[$]local_package_dir.*=).*$:\1 \"$STRATOS_PACK_PATH\":g" $PUPPET_FILE
+  sudo sed -i -E "s:(\s*[$]mb_ip.*=).*$:\1 \"$IP_ADDR\":g" $PUPPET_FILE
+  sudo sed -i -E "s:(\s*[$]mb_port.*=).*$:\1 \"$MB_PORT\":g" $PUPPET_FILE
   # TODO move hardcoded strings to variables
-  sudo sed -i -E "s:(\s*[$]truststore_password.*=).*$:\1 \"wso2carbon\":g" /etc/puppet/manifests/nodes.pp
+  sudo sed -i -E "s:(\s*[$]truststore_password.*=).*$:\1 \"wso2carbon\":g" $PUPPET_FILE
 
   popd 
 
