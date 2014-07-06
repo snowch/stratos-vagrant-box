@@ -7,3 +7,4 @@ m2_repo/
 stratos.log
 openstack.log
 test.log
+maven-settings.xml

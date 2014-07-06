@@ -28,8 +28,7 @@ Vagrant.configure("2") do |config|
     # stratos. ubuntu cloud images only have 10Gb which is not enough.
 
     # 64 bit machine
-    config.vm.box = "opscode-ubuntu-13.04-64"
-    config.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-13.04_chef-provisionerless.box"
+    config.vm.box = "chef/ubuntu-14.04"
 
     # puppetinstall scripts hardcode the guest name to 'puppet.$DOMAIN' so lets keep with that
     config.vm.hostname = "puppet.stratos.com"
@@ -80,6 +79,11 @@ end
 
 
 $stratos_script = <<SCRIPT
+# copy maven-settings.xml file if it doesn't already exist
+if [ ! -e /vagrant/maven-settings.xml ]; then
+  cp /vagrant/maven-settings.xml.example /vagrant/maven-settings.xml
+fi
+
 # copy example stratos version conf file if it doesn't already exist
 if [ ! -e /vagrant/stratos_version.conf ]; then
   cp /vagrant/stratos_version.conf.example /vagrant/stratos_version.conf

@@ -53,15 +53,11 @@ TOMCAT_URL="http://archive.apache.org/dist/tomcat/tomcat-7/v7.0.52/bin/apache-to
 # Hawtbuf download location.
 HAWTBUF_URL="http://repo1.maven.org/maven2/org/fusesource/hawtbuf/hawtbuf/1.2/hawtbuf-1.2.jar"
 
+MVN_SETTINGS="-s /vagrant/maven-settings.xml"
+
 ########################################################
 # You should not need to change anything below this line
 ########################################################
-
-if ! egrep -q "Ubuntu (12.04|13.04|13.10)" /etc/issue; then
-  echo "WARNING: This script has only been tested on Ubuntu 12.04, 13.04 and 13.10"
-  read -p "Press [Enter] key to continue (CTRL-C to quit)..."  
-  clear
-fi
 
 if [[ ! $(whoami) =~ (vagrant|stratos) ]] ; then
   echo "This script is designed to be run as user 'vagrant' or 'stratos'."
@@ -179,7 +175,7 @@ Where:
        Username: admin
        Password: admin
 
-    -d Setup a development environment with lubuntu desktop and eclipse.
+    -d Setup a development environment with ubuntu desktop and eclipse.
        This Command is only intented to be run on a vagrant environment.
 
        You can connect using rdesktop or Windows Remote Desktop Client.  
@@ -365,7 +361,6 @@ function puppet_stratos_setup() {
 
   echo -e "\e[32mSetting up puppet master for Stratos\e[39m"
 
-  GIT_BRANCH=$(git --git-dir /home/vagrant/stratos-source/.git symbolic-ref --short HEAD)
 
   pushd $PWD
 
@@ -379,10 +374,12 @@ function puppet_stratos_setup() {
   # WARNING: currently Stratos only supports 64 bit cartridges
   JAVA_ARCH="x64"
 
+  GIT_BRANCH=$(git --git-dir /home/vagrant/stratos-source/.git symbolic-ref --short HEAD)
+
   if [[ $GIT_BRANCH == "4.0"* ]]; then
     PUPPET_FILE=/etc/puppet/manifests/nodes.pp
   else
-    PUPPET_FILE=/etc/puppet/manifests/base.pp
+    PUPPET_FILE=/etc/puppet/manifests/nodes/base.pp
   fi
 
   sudo sed -i -E "s:(\s*[$]java_name.*=).*$:\1 \"jdk1.7.0_51\":g" $PUPPET_FILE
@@ -653,12 +650,17 @@ function development_environment() {
 
    sudo apt-get update
    sudo apt-get upgrade -y
-   sudo apt-get install -y --no-install-recommends lubuntu-desktop eclipse-jdt xvfb lxde firefox
-   sudo apt-get install -y --no-install-recommends vnc4server xrdp
+   sudo apt-get install -y --no-install-recommends xubuntu-desktop xfce4 eclipse-jdt xvfb firefox gnome-terminal
 
-   # switch off screensaver - it can kill the CPU
-   echo lxsession > ~/.xsession
-   echo 'mode: off' > ~/.xscreensaver
+   cd $HOME
+
+   if [[ ! -e X11RDP-o-Matic ]]; then
+      git clone https://github.com/scarygliders/X11RDP-o-Matic.git
+      cd X11RDP-o-Matic
+      sudo ./X11rdp-o-matic.sh --justdoit
+      echo xfce4-session >~/.xsession
+      echo 'mode: off' > ~/.xscreensaver
+   fi
 
    # switch off update manager popup
    # FIXME: this doesn't seem to work
@@ -666,7 +668,7 @@ function development_environment() {
 
    cd $STRATOS_SOURCE_PATH
    echo "Running 'mvn eclipse:eclipse'"
-   mvn -q eclipse:eclipse
+   mvn $MVN_SETTINGS -q eclipse:eclipse
 
    # import projects
    echo "Downloading eclipse import util"
@@ -714,7 +716,7 @@ function development_environment() {
       echo -e "\e[31m$IMPORT_ERRORS\e[39m"
    fi
 
-   mvn -Declipse.workspace=${HOME}/workspace/ eclipse:configure-workspace
+   mvn $MVN_SETTINGS -Declipse.workspace=${HOME}/workspace/ eclipse:configure-workspace
 
    popd
 
@@ -750,7 +752,7 @@ function maven_clean_install () {
    pushd $PWD
    cd $STRATOS_SOURCE_PATH
    
-   mvn clean install -DskipTests
+   mvn $MVN_SETTINGS clean install -DskipTests
    popd
 }
 
@@ -763,7 +765,7 @@ function force_clean () {
    read -p "Please close eclipse, stop any maven jobs and press [Enter] key to continue."
    
    cd $STRATOS_SOURCE_PATH
-   mvn clean
+   mvn $MVN_SETTINGS clean
    
    rm -rf ${HOME}/workspace-stratos
    
