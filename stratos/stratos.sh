@@ -650,7 +650,9 @@ function development_environment() {
 
    sudo apt-get update
    sudo apt-get upgrade -y
-   sudo apt-get install -y --no-install-recommends xubuntu-desktop xfce4 eclipse-jdt xvfb firefox gnome-terminal
+   sudo apt-get install -y xubuntu-desktop xfce4 eclipse-jdt xvfb firefox gnome-terminal
+
+   sudo ufw disable
 
    cd $HOME
 
