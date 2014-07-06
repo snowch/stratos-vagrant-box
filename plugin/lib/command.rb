@@ -77,6 +77,7 @@ module Stratos
   
       if options[:desktop]
          run_command "vagrant ssh -c './stratos.sh -d'" 
+         run_command "vagrant reload"     # Vagrant API?
       end
 
       if options[:openstack]
