@@ -245,9 +245,8 @@ function prerequisites() {
   sudo apt-get update
   sudo apt-get upgrade -y
   sudo apt-get install -y --no-install-recommends git maven openjdk-7-jdk 
-  sudo apt-get install -y docker.io
-  sudo ln -sf /usr/bin/docker.io /usr/local/bin/docker
-  sudo sed -i '$acomplete -F _docker docker' /etc/bash_completion.d/docker.io
+
+  curl -s https://get.docker.io/ubuntu/ | sudo sh
 
   if [ "$(arch)" != "x86_64" ]
   then
