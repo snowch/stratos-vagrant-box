@@ -1,3 +1,4 @@
 container_id=$(sudo docker run -d -e MYVAR=world apachestratos/stratos-single-jvm)
 
 sudo docker logs $container_id
+
