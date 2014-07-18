@@ -36,7 +36,20 @@ Vagrant.configure("2") do |config|
     # Use vagrant cachier if it is available - it will speed up repeated 
     # 'vagrant destroy' and 'vagrant up' calls
     if Vagrant.has_plugin?("vagrant-cachier")
-       config.cache.scope = :box
+      # monkey-patch / disable the :apt_lists bucket until this is fixed:
+      # https://github.com/fgrehm/vagrant-cachier/issues/113
+      module VagrantPlugins
+        module Cachier
+          class Bucket
+            class AptLists < Bucket
+              def self.capability
+                :none
+              end
+            end
+          end
+        end
+      end
+      config.cache.scope = :box
     end
 
 # Using a synced folder can break the build due to the maven file name lengths
