@@ -19,20 +19,21 @@ ADD /files/stratos-installer/config/all/repository/conf/activemq/jndi.properties
 # Get ActiveMQ libs
 ####################
 
-RUN wget -q http://archive.apache.org/dist/activemq/5.9.1/apache-activemq-5.9.1-bin.tar.gz
-RUN mkdir tmp-activemq
-RUN tar -C tmp-activemq -xzf apache-activemq-5.9.1-bin.tar.gz
-RUN cp -f tmp-activemq/apache-activemq-5.9.1/lib/activemq-broker-5.9.1.jar apache-stratos/repository/components/lib/
-RUN cp -f tmp-activemq/apache-activemq-5.9.1/lib/activemq-client-5.9.1.jar apache-stratos/repository/components/lib/
-RUN cp -f tmp-activemq/apache-activemq-5.9.1/lib/geronimo-j2ee-management_1.1_spec-1.0.1.jar apache-stratos/repository/components/lib/ 
-RUN cp -f tmp-activemq/apache-activemq-5.9.1/lib/geronimo-jms_1.1_spec-1.1.1.jar apache-stratos/repository/components/lib/ 
-RUN rm -rf tmp-activemq
+ADD /files/apache-activemq-5.9.1-bin.tar.gz .
 
-###########
+RUN cp -f apache-activemq-5.9.1/lib/activemq-broker-5.9.1.jar apache-stratos/repository/components/lib/
+RUN cp -f apache-activemq-5.9.1/lib/activemq-client-5.9.1.jar apache-stratos/repository/components/lib/
+RUN cp -f apache-activemq-5.9.1/lib/geronimo-j2ee-management_1.1_spec-1.0.1.jar apache-stratos/repository/components/lib/ 
+RUN cp -f apache-activemq-5.9.1/lib/geronimo-jms_1.1_spec-1.1.1.jar apache-stratos/repository/components/lib/ 
+RUN rm -rf apache-activemq-5.9.1
+
 # CC Setup
-###########
 
 ADD /files/stratos-installer/config/all/repository/conf/cloud-controller.xml apache-stratos/repository/conf/
+
+# AS Setup
+
+ADD  /files/stratos-installer/config/all/repository/conf/autoscaler.xml apache-stratos/repository/conf/
 
 ###################
 # Setup run script
