@@ -28,6 +28,12 @@ RUN cp -f tmp-activemq/apache-activemq-5.9.1/lib/geronimo-j2ee-management_1.1_sp
 RUN cp -f tmp-activemq/apache-activemq-5.9.1/lib/geronimo-jms_1.1_spec-1.1.1.jar apache-stratos/repository/components/lib/ 
 RUN rm -rf tmp-activemq
 
+###########
+# CC Setup
+###########
+
+ADD /files/stratos-installer/config/all/repository/conf/cloud-controller.xml apache-stratos/repository/conf/
+
 ###################
 # Setup run script
 ###################
