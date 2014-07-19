@@ -1,4 +1,4 @@
-container_id=$(sudo docker run -d -e MYVAR=world apachestratos/stratos-single-jvm)
+container_id=$(sudo docker run -d -e MB_HOSTNAME=10.10.10.10 -e MB_PORT=61616 apachestratos/stratos-single-jvm)
 
-sudo docker logs $container_id
+sudo docker logs -f $container_id
 

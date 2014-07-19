@@ -1,10 +1,11 @@
 #!/bin/bash
 set -e
 
-MYVAR=${MYVAR:-""}
-
-echo hello $MYVAR
+echo Setting MB_HOSTNAME=$MB_HOSTNAME 
+echo Setting MB_PORT=$MB_PORT
 
 export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64/
+
+sed -i "s@MB_HOSTNAME:MB_LISTEN_PORT@$MB_HOSTNAME:$MB_PORT@g" ./apache-stratos/repository/conf/jndi.properties
 
 ./apache-stratos/bin/stratos.sh -Dprofile=default 

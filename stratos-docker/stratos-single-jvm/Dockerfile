@@ -19,7 +19,7 @@ ADD /files/stratos-installer/config/all/repository/conf/activemq/jndi.properties
 # Get ActiveMQ libs
 ####################
 
-RUN wget http://archive.apache.org/dist/activemq/5.9.1/apache-activemq-5.9.1-bin.tar.gz
+RUN wget -q http://archive.apache.org/dist/activemq/5.9.1/apache-activemq-5.9.1-bin.tar.gz
 RUN mkdir tmp-activemq
 RUN tar -C tmp-activemq -xzf apache-activemq-5.9.1-bin.tar.gz
 RUN cp -f tmp-activemq/apache-activemq-5.9.1/lib/activemq-broker-5.9.1.jar apache-stratos/repository/components/lib/
