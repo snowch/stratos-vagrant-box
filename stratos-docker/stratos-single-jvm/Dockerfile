@@ -27,13 +27,25 @@ RUN cp -f apache-activemq-5.9.1/lib/geronimo-j2ee-management_1.1_spec-1.0.1.jar 
 RUN cp -f apache-activemq-5.9.1/lib/geronimo-jms_1.1_spec-1.1.1.jar apache-stratos/repository/components/lib/ 
 RUN rm -rf apache-activemq-5.9.1
 
+###########
 # CC Setup
+###########
 
 ADD /files/stratos-installer/config/all/repository/conf/cloud-controller.xml apache-stratos/repository/conf/
 
+###########
 # AS Setup
+###########
 
 ADD  /files/stratos-installer/config/all/repository/conf/autoscaler.xml apache-stratos/repository/conf/
+
+###########
+# SM Setup
+###########
+
+ADD /files/stratos-installer/config/all/repository/conf/cartridge-config.properties apache-stratos/repository/conf/
+ADD /files/stratos-installer/config/all/repository/conf/datasources/master-datasources.xml apache-stratos/repository/conf/datasources/
+ADD /files/mysql-connector-java-5.1.29.jar apache-stratos/repository/components/lib/
 
 ###################
 # Setup run script
