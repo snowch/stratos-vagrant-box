@@ -1,19 +1,25 @@
 #!/bin/bash
-set -e
 
-#############################################
-# set AS defaults when running on single JVM
-#############################################
+set -e # Exit on error
+
+##########################################
+# set defaults when running on single JVM
+##########################################
 
 CC_HOSTNAME=${CC_HOSTNAME:-"127.0.0.1"}
-AS_CC_HTTPS_PORT=${AS_CC_HTTPS_PORT:-"9443"}
+CC_HTTPS_PORT=${CC_HTTPS_PORT:-"9443"}
 SM_HOSTNAME=${SM_HOSTNAME:-"127.0.0.1"}
-AS_SM_HTTPS_PORT=${AS_SM_HTTPS_PORT:-"9443"}
+SM_HTTPS_PORT=${SM_HTTPS_PORT:-"9443"}
+AS_HOSTNAME=${AS_HOSTNAME:-"127.0.0.1"}
+AS_HTTPS_PORT=${AS_HTTPS_PORT:-"9443"}
 
 ###################################
 # Echo settings for debug purposes
 ###################################
 
+echo =============================
+echo Environment Variable Settings
+echo =============================
 echo Setting MB_HOSTNAME=$MB_HOSTNAME 
 echo Setting MB_PORT=$MB_PORT
 echo =========================
@@ -30,9 +36,21 @@ echo ===================
 echo Autoscaler Settings
 echo ===================
 echo Setting CC_HOSTNAME=$CC_HOSTNAME
-echo Setting AS_CC_HTTPS_PORT=$AS_CC_HTTPS_PORT
+echo Setting CC_HTTPS_PORT=$CC_HTTPS_PORT
 echo Setting SM_HOSTNAME=$SM_HOSTNAME
-echo Setting AS_SM_HTTPS_PORT=$AS_SM_HTTPS_PORT
+echo Setting SM_HTTPS_PORT=$SM_HTTPS_PORT
+echo ========================
+echo Stratos Manager Settings
+echo ========================
+echo Setting PUPPET_IP=$PUPPET_IP
+echo Setting PUPPET_HOSNAME=$PUPPET_HOSTNAME
+echo Setting PUPPET_ENVIRONMENT=$PUPPET_ENVIRONMENT
+echo Setting USERSTORE_DB_HOSTNAME=$USERSTORE_DB_HOSTNAME
+echo Setting USERSTORE_DB_PORT=$USERSTORE_DB_PORT
+echo Setting USERSTORE_DB_SCHEMA=$USERSTORE_DB_SCHEMA
+echo Setting USERSTORE_DB_USER=$USERSTORE_DB_USER
+echo Setting USERSTORE_DB_PASS=$USERSTORE_DB_PASS
+
 
 export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64/
 
@@ -70,8 +88,29 @@ fi
 AUTOSCALER_CONFIG_FILE=./apache-stratos/repository/conf/autoscaler.xml
 
 sed -i "s@CC_HOSTNAME@$CC_HOSTNAME@g" $AUTOSCALER_CONFIG_FILE
-sed -i "s@CC_LISTEN_PORT@$AS_CC_HTTPS_PORT@g" $AUTOSCALER_CONFIG_FILE
+sed -i "s@CC_LISTEN_PORT@$CC_HTTPS_PORT@g" $AUTOSCALER_CONFIG_FILE
 sed -i "s@SM_HOSTNAME@$SM_HOSTNAME@g" $AUTOSCALER_CONFIG_FILE
-sed -i "s@SM_LISTEN_PORT@$AS_SM_HTTPS_PORT@g" $AUTOSCALER_CONFIG_FILE
+sed -i "s@SM_LISTEN_PORT@$SM_HTTPS_PORT@g" $AUTOSCALER_CONFIG_FILE
+
+###########
+# SM setup
+###########
+
+CART_PROPS_FILE=./apache-stratos/repository/conf/cartridge-config.properties
+
+sed -i "s@CC_HOSTNAME:CC_HTTPS_PORT@$CC_HOSTNAME:$CC_HTTPS_PORT@g" $CART_PROPS_FILE
+sed -i "s@AS_HOSTNAME:AS_HTTPS_PORT@$AS_HOSTNAME:$AS_HTTPS_PORT@g" $CART_PROPS_FILE
+sed -i "s@PUPPET_IP@$PUPPET_IP@g" $CART_PROPS_FILE
+sed -i "s@PUPPET_HOSTNAME@$PUPPET_HOSTNAME@g" $CART_PROPS_FILE
+sed -i "s@PUPPET_ENV@$PUPPET_ENVIRONMENT@g" $CART_PROPS_FILE
+
+DS_FILE=./apache-stratos/repository/conf/datasources/master-datasources.xml
+
+sed -i "s@USERSTORE_DB_HOSTNAME@$USERSTORE_DB_HOSTNAME@g" $DS_FILE
+sed -i "s@USERSTORE_DB_PORT@$USERSTORE_DB_PORT@g" $DS_FILE
+sed -i "s@USERSTORE_DB_SCHEMA@$USERSTORE_DB_SCHEMA@g" $DS_FILE
+sed -i "s@USERSTORE_DB_USER@$USERSTORE_DB_USER@g" $DS_FILE
+sed -i "s@USERSTORE_DB_PASS@$USERSTORE_DB_PASS@g" $DS_FILE
+
 
 ./apache-stratos/bin/stratos.sh -Dprofile=default 

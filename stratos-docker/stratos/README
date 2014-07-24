@@ -1,0 +1,27 @@
+
+docker_env+=(-e "USERSTORE_DB_HOSTNAME=10.10.10.20")
+docker_env+=(-e "USERSTORE_DB_PORT=3306")
+docker_env+=(-e "USERSTORE_DB_SCHEMA=none")
+docker_env+=(-e "USERSTORE_DB_USER=none")
+docker_env+=(-e "USERSTORE_DB_PASS=none")
+
+docker_env+=(-e "PUPPET_IP=10.10.10.10")
+docker_env+=(-e "PUPPET_HOSTNAME=stratos.com")
+docker_env+=(-e "PUPPET_ENVIRONMENT=none")
+
+docker_env+=(-e "MB_HOSTNAME=10.10.10.10")
+docker_env+=(-e "MB_PORT=61616")
+
+docker_env+=(-e "EC2_ENABLED=true")
+docker_env+=(-e "EC2_IDENTITY=abc")
+docker_env+=(-e "EC2_CREDENTIAL=def")
+docker_env+=(-e "EC2_CREDENTIAL=none")
+docker_env+=(-e "EC2_OWNER_ID=none")
+docker_env+=(-e "EC2_AVAILABILITY_ZONE=none")
+docker_env+=(-e "EC2_SECURITY_GROUPS=none")
+docker_env+=(-e "EC2_KEYPAIR=none")
+
+container_id=$(sudo docker run -d "${docker_env[@]}" apachestratos/stratos)
+
+sudo docker logs -f $container_id
+

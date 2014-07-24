@@ -10,5 +10,5 @@ wget -N -q -P files/ http://repo1.maven.org/maven2/mysql/mysql-connector-java/5.
 
 cp -rf /home/vagrant/stratos-source/tools/stratos-installer/ files/
 
-sudo docker build -t=apachestratos/stratos-single-jvm .
-#sudo docker push apachestratos/stratos-single-jvm
+sudo docker build -t=apachestratos/stratos .
+#sudo docker push apachestratos/stratos
