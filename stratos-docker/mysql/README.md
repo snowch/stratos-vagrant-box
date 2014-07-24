@@ -14,7 +14,7 @@ Includes a bunch of cool features such as:
 
 Here's how it works:
 
-    $ docker run -d -p 3306:3306 -e MYSQL_ROOT_PASSWORD=xehVg1IpVhEmlwRMG orchardup/mysql
+    $ docker run -d -p 3306:3306 -e MYSQL_ROOT_PASSWORD=password apachestratos/mysql
     da809981545f
     $ mysql -h 127.0.0.1 -u root -p
     Enter password:

@@ -39,12 +39,15 @@ echo Setting CC_HOSTNAME=$CC_HOSTNAME
 echo Setting CC_HTTPS_PORT=$CC_HTTPS_PORT
 echo Setting SM_HOSTNAME=$SM_HOSTNAME
 echo Setting SM_HTTPS_PORT=$SM_HTTPS_PORT
-echo ========================
-echo Stratos Manager Settings
-echo ========================
+echo ===============================
+echo Stratos Manager Puppet Settings
+echo ===============================
 echo Setting PUPPET_IP=$PUPPET_IP
 echo Setting PUPPET_HOSNAME=$PUPPET_HOSTNAME
 echo Setting PUPPET_ENVIRONMENT=$PUPPET_ENVIRONMENT
+echo =================================
+echo Stratos Manager Database Settings
+echo =================================
 echo Setting USERSTORE_DB_HOSTNAME=$USERSTORE_DB_HOSTNAME
 echo Setting USERSTORE_DB_PORT=$USERSTORE_DB_PORT
 echo Setting USERSTORE_DB_SCHEMA=$USERSTORE_DB_SCHEMA

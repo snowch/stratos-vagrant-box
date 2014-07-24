@@ -1,15 +1,35 @@
 
-docker_env+=(-e "USERSTORE_DB_HOSTNAME=10.10.10.20")
-docker_env+=(-e "USERSTORE_DB_PORT=3306")
-docker_env+=(-e "USERSTORE_DB_SCHEMA=none")
-docker_env+=(-e "USERSTORE_DB_USER=none")
-docker_env+=(-e "USERSTORE_DB_PASS=none")
+#
+# Start mysql docker container (skip this step if you have mysql already installed)
+#
 
-docker_env+=(-e "PUPPET_IP=10.10.10.10")
+USERSTORE_ID=$(sudo docker run -d -p 3306:3306 -e MYSQL_ROOT_PASSWORD=password apachestratos/mysql)
+USERSTORE_IP=$(sudo docker inspect $USERSTORE_ID | grep IPAddress | cut -d '"' -f 4)
+sleep 5 # wait for container to start
+mysql -h 127.0.0.1 -u root -ppassword < /home/vagrant/stratos-source/tools/stratos-installer/resources/mysql.sql
+mysql -h 127.0.0.1 -u root -ppassword -e "
+  CREATE USER 'stratos'@'%' IDENTIFIED BY 'password'; 
+  GRANT ALL PRIVILEGES ON USERSTORE_DB_SCHEMA.* To 'stratos'@'%' IDENTIFIED BY 'password'; 
+  FLUSH PRIVILEGES;
+  SET GLOBAL max_connect_errors=10000;
+"
+
+#
+# Start Stratos
+#
+
+unset docker_env
+docker_env+=(-e "USERSTORE_DB_HOSTNAME=${USERSTORE_IP}")
+docker_env+=(-e "USERSTORE_DB_PORT=3306")
+docker_env+=(-e "USERSTORE_DB_SCHEMA=USERSTORE_DB_SCHEMA")
+docker_env+=(-e "USERSTORE_DB_USER=stratos")
+docker_env+=(-e "USERSTORE_DB_PASS=password")
+
+docker_env+=(-e "PUPPET_IP=192.168.56.5")
 docker_env+=(-e "PUPPET_HOSTNAME=stratos.com")
 docker_env+=(-e "PUPPET_ENVIRONMENT=none")
 
-docker_env+=(-e "MB_HOSTNAME=10.10.10.10")
+docker_env+=(-e "MB_HOSTNAME=192.168.56.5")
 docker_env+=(-e "MB_PORT=61616")
 
 docker_env+=(-e "EC2_ENABLED=true")
