@@ -33,4 +33,4 @@ fi
 /usr/sbin/mysqld --bootstrap --verbose=0 $MYSQLD_ARGS < $tfile
 rm -f $tfile
 
-exec /usr/sbin/mysqld $MYSQLD_ARGS
+exec /usr/sbin/mysqld $MYSQLD_ARGS --init-file=/etc/mysql/conf.d/stratos.sql 
