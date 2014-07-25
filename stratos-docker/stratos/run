@@ -12,6 +12,7 @@ SM_HOSTNAME=${SM_HOSTNAME:-"127.0.0.1"}
 SM_HTTPS_PORT=${SM_HTTPS_PORT:-"9443"}
 AS_HOSTNAME=${AS_HOSTNAME:-"127.0.0.1"}
 AS_HTTPS_PORT=${AS_HTTPS_PORT:-"9443"}
+STRATOS_PROFILE=${STRATOS_PROFILE:-"default"}
 
 ###################################
 # Echo settings for debug purposes
@@ -43,7 +44,7 @@ echo ===============================
 echo Stratos Manager Puppet Settings
 echo ===============================
 echo Setting PUPPET_IP=$PUPPET_IP
-echo Setting PUPPET_HOSNAME=$PUPPET_HOSTNAME
+echo Setting PUPPET_HOSTNAME=$PUPPET_HOSTNAME
 echo Setting PUPPET_ENVIRONMENT=$PUPPET_ENVIRONMENT
 echo =================================
 echo Stratos Manager Database Settings
@@ -53,6 +54,13 @@ echo Setting USERSTORE_DB_PORT=$USERSTORE_DB_PORT
 echo Setting USERSTORE_DB_SCHEMA=$USERSTORE_DB_SCHEMA
 echo Setting USERSTORE_DB_USER=$USERSTORE_DB_USER
 echo Setting USERSTORE_DB_PASS=$USERSTORE_DB_PASS
+echo ========================
+echo Stratos Profile Settings
+echo ========================
+echo Setting STRATOS_PROFILE=$STRATOS_PROFILE
+echo =====================================
+echo End of Environment Variables Settings
+echo =====================================
 
 
 export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64/
@@ -116,4 +124,4 @@ sed -i "s@USERSTORE_DB_USER@$USERSTORE_DB_USER@g" $DS_FILE
 sed -i "s@USERSTORE_DB_PASS@$USERSTORE_DB_PASS@g" $DS_FILE
 
 
-./apache-stratos/bin/stratos.sh -Dprofile=default 
+./apache-stratos/bin/stratos.sh -Dprofile=$STRATOS_PROFILE
