@@ -55,6 +55,8 @@ HAWTBUF_URL="http://repo1.maven.org/maven2/org/fusesource/hawtbuf/hawtbuf/1.2/ha
 
 MVN_SETTINGS="-s /vagrant/maven-settings.xml"
 
+XRDP_URL="https://github.com/snowch/X11RDP-o-Matic/releases/download/0.1/xrdp_0.9.0.master-1_amd64.deb"
+
 ########################################################
 # You should not need to change anything below this line
 ########################################################
@@ -243,12 +245,12 @@ function prerequisites() {
 
   echo -e "\e[32mInstall prerequisite software\e[39m"
   sudo apt-get update
-  sudo apt-get upgrade -y
-  sudo apt-get install -y --no-install-recommends git maven openjdk-7-jdk 
+  sudo DEBIAN_FRONTEND=noninteractive apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade
+  sudo apt-get install -y --no-install-recommends git maven openjdk-7-jdk curl
 
   curl -s https://get.docker.io/ubuntu/ | sudo sh
   sudo ln -sf /usr/bin/docker.io /usr/local/bin/docker
-  sudo sed -i '$acomplete -F _docker docker' /etc/bash_completion.d/docker.io
+  sudo sed -i '$acomplete -F _docker docker' /etc/bash_completion.d/docker
 
   if [ "$(arch)" != "x86_64" ]
   then
@@ -661,9 +663,14 @@ function development_environment() {
    cd $HOME
 
    if [[ ! -e X11RDP-o-Matic ]]; then
-      git clone https://github.com/scarygliders/X11RDP-o-Matic.git
-      cd X11RDP-o-Matic
-      sudo ./X11rdp-o-matic.sh --justdoit
+      #git clone https://github.com/scarygliders/X11RDP-o-Matic.git
+      #cd X11RDP-o-Matic
+      #sudo ./X11rdp-o-matic.sh --justdoit
+
+      wget -N -nv -P $STRATOS_PACK_PATH $XRDP_URL
+      sudo dpkg -i $STRATOS_PACK_PATH/$(basename $XRDP_URL)
+      sudo /etc/init.d/xrdp start
+      
       echo xfce4-session >~/.xsession
       echo 'mode: off' > ~/.xscreensaver
    fi
