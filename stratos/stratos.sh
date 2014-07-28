@@ -28,10 +28,6 @@ DOMAINNAME="stratos.com"
 # This script will set the hostname to this value
 PUPPET_HOSTNAME="puppet.stratos.com"
 
-# Assume ActiveMQ for Messaging, and installed locally.
-MB_IP_ADDR="127.0.0.1"
-MB_PORT=61616
-
 # source and maven versions
 source ${HOME}/stratos_version.conf
 
@@ -56,24 +52,11 @@ HAWTBUF_URL="http://repo1.maven.org/maven2/org/fusesource/hawtbuf/hawtbuf/1.2/ha
 MVN_SETTINGS="-s /vagrant/maven-settings.xml"
 
 XRDP_URL="https://github.com/snowch/X11RDP-o-Matic/releases/download/0.1/xrdp_0.9.0.master-1_amd64.deb"
+X11RDP_URL="https://github.com/snowch/X11RDP-o-Matic/releases/download/0.1/x11rdp_0.9.0.master-1_amd64.deb"
 
 ########################################################
 # You should not need to change anything below this line
 ########################################################
-
-if [[ ! $(whoami) =~ (vagrant|stratos) ]] ; then
-  echo "This script is designed to be run as user 'vagrant' or 'stratos'."
-  echo ""
-  echo "You can create a user account, as administrator:"
-  echo ""
-  echo "  useradd --create-home -s /bin/bash vagrant"
-  echo "  echo 'vagrant:vagrant' | chpasswd"
-  echo "  echo 'vagrant ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/vagrant"
-  echo "  echo 'Defaults:vagrant secure_path=/sbin:/usr/sbin:/usr/bin:/bin:/usr/local/sbin:/usr/local/bin' >> /etc/sudoers.d/vagrant"
-  echo ""
-  read -p "If you would like to continue anyway, press [Enter] key to continue (CTRL-C to quit)..."  
-  clear
-fi
 
 # Don't allow uninitialised variables
 # set -u
@@ -257,13 +240,6 @@ function prerequisites() {
     fix_git_tls_bug
   fi
 
-  sudo sh -c "
-     export DEBIAN_FRONTEND=noninteractive
-     echo mysql-server-5.1 mysql-server/root_password password password | debconf-set-selections
-     echo mysql-server-5.1 mysql-server/root_password_again password password | debconf-set-selections
-     apt-get -y install mysql-server
-     "
-
   if [ "$(arch)" == "x86_64" ]
   then
     grep '^export MAVEN_OPTS' .profile || echo 'export MAVEN_OPTS="-Xmx2048m -XX:MaxPermSize=512m -XX:ReservedCodeCacheSize=256m -Xdebug -Xrunjdwp:transport=dt_socket,address=8888,server=y,suspend=n"' >> .profile
@@ -408,25 +384,11 @@ function installer() {
 
   pushd $PWD
 
-  kill_servers
+  sudo rm -rf $STRATOS_PATH
 
   [ -d $STRATOS_SETUP_PATH ] || mkdir $STRATOS_SETUP_PATH
   [ -d /etc/puppet/modules/agent/files/ ] || sudo mkdir -p /etc/puppet/modules/agent/files/
   [ -d /etc/puppet/modules/agent/files/activemq ] || sudo mkdir -p /etc/puppet/modules/agent/files/activemq
-
-  if [ -d $STRATOS_PATH ]
-  then
-    echo "Found existing Stratos instllation folder: $STRATOS_PATH"
-    echo "Delete this folder and the Stratos 'userstore' database [y/n]? "
-    read answer
-    if [[ $answer == y ]] ; then
-        sudo rm -rf $STRATOS_PATH
-        mysql -u root -p'password' -e 'drop database if exists userstore;' mysql
-    else
-        echo "Can't install on top of existing $STRATOS_PATH folder.  Exiting."
-        exit 1
-    fi
-  fi
 
   # TODO use sed line replacement
   grep -q '^export STRATOS_CLI_HOME' ~/.profile || echo "export STRATOS_CLI_HOME=$STRATOS_CLI_HOME" >> ~/.profile
@@ -439,9 +401,6 @@ function installer() {
   unzip $cli_file -d $STRATOS_PATH
   STRATOS_CLI_HOME=$STRATOS_PATH/$(basename $cli_file)
  
-  cp -rpf $STRATOS_SOURCE_PATH/tools/stratos-installer/* $STRATOS_SETUP_PATH/
-  cp -f $STRATOS_SOURCE_PATH/products/stratos/modules/distribution/target/apache-stratos-*.zip $STRATOS_PACK_PATH/
-
   sudo cp -f $STRATOS_SOURCE_PATH/products/cartridge-agent/modules/distribution/target/apache-stratos-cartridge-agent-*.zip /etc/puppet/modules/agent/files/
   sudo cp -f $STRATOS_SOURCE_PATH/products/load-balancer/modules/distribution/target/apache-stratos-load-balancer-*.zip /etc/puppet/modules/lb/files/
 
@@ -483,160 +442,85 @@ function installer() {
   sudo cp -f $STRATOS_PACK_PATH/geronimo-jms_1.1_spec-1.1.1.jar /etc/puppet/modules/lb/files/
   sudo cp -f $STRATOS_PACK_PATH/$(basename $HAWTBUF_URL) /etc/puppet/modules/lb/files/
 
-  CFG_FILE=$STRATOS_SETUP_PATH/conf/setup.conf
-
-  sed -i "s:^export setup_path=.*:export setup_path=$STRATOS_SETUP_PATH:g" $CFG_FILE
-  sed -i "s:^export stratos_packs=.*:export stratos_packs=$STRATOS_PACK_PATH:g" $CFG_FILE
-  sed -i "s:^export stratos_path=.*:export stratos_path=$STRATOS_PATH:g" $CFG_FILE
-  sed -i "s:^export mysql_connector_jar=.*:export mysql_connector_jar=$STRATOS_PACK_PATH/$(basename $MYSQLJ_URL):g" $CFG_FILE
-  sed -i "s:^export JAVA_HOME=.*:export JAVA_HOME=$JAVA_HOME:g" $CFG_FILE
-  sed -i "s:^export log_path=.*:export log_path=$HOME/stratos-log:g" $CFG_FILE
-  sed -i "s:^export host_user=.*:export host_user=$(whoami):g" $CFG_FILE
-  sed -i "s:^export stratos_domain=.*:export stratos_domain=$DOMAINNAME:g" $CFG_FILE
-  sed -i "s:^export offset=.*:export offset=0:g" $CFG_FILE
-  sed -i "s:^export mb_ip=.*:export mb_ip=$MB_IP_ADDR:g" $CFG_FILE
-  sed -i "s:^export mb_port=.*:export mb_port=$MB_PORT:g" $CFG_FILE
-  sed -i "s:^export puppet_ip=.*:export puppet_ip=$PUPPET_IP_ADDR:g" $CFG_FILE
-  sed -i "s:^export puppet_hostname=.*:export puppet_hostname=$PUPPET_HOSTNAME:g" $CFG_FILE
-  # set puppet_environment to a dummy value
-  sed -i "s:^export puppet_environment=.*:export puppet_environment=XXXXXXXXXXXXXXXXX:g" $CFG_FILE
-  sed -i "s:^export cep_artifacts_path=.*:export cep_artifacts_path=$STRATOS_SOURCE_PATH/extensions/cep/artifacts/:g" $CFG_FILE
-
-  sed -i "s:^export userstore_db_hostname=.*:export userstore_db_hostname=\"localhost\":g" $CFG_FILE
-  sed -i "s:^export userstore_db_schema=.*:export userstore_db_schema=\"userstore\":g" $CFG_FILE
-  sed -i "s:^export userstore_db_port=.*:export userstore_db_port=\"3306\":g" $CFG_FILE
-  sed -i "s:^export userstore_db_user=.*:export userstore_db_user=\"root\":g" $CFG_FILE
-  sed -i "s:^export userstore_db_pass=.*:export userstore_db_pass=\"password\":g" $CFG_FILE
-
-  # read variables from iaas.conf, escaping colons to prevent later sed statements throwing an error
-  source <(sed 's/:/\\\\:/g' ${HOME}/iaas.conf)
-
-  # Now apply the changes to stratos-setup.conf for each of the IaaS
-
-  # EC2
-  sed -i "s:^export ec2_provider_enabled=.*:export ec2_provider_enabled='$ec2_provider_enabled':g" $CFG_FILE
-  sed -i "s:^export ec2_identity=.*:export ec2_identity='$ec2_identity':g" $CFG_FILE
-  sed -i "s:^export ec2_credential=.*:export ec2_credential='$ec2_credential':g" $CFG_FILE
-  sed -i "s:^export ec2_keypair_name=.*:export ec2_keypair_name='$ec2_keypair_name':g" $CFG_FILE
-  sed -i "s:^export ec2_owner_id=.*:export ec2_owner_id='$ec2_owner_id':g" $CFG_FILE
-  sed -i "s:^export ec2_availability_zone=.*:export ec2_availability_zone='$ec2_availability_zone':g" $CFG_FILE
-  sed -i "s:^export ec2_security_groups=.*:export ec2_security_groups='$ec2_security_groups':g" $CFG_FILE
-
-  # Openstack
-  sed -i "s:^export openstack_provider_enabled=.*:export openstack_provider_enabled='$openstack_provider_enabled':g" $CFG_FILE
-  sed -i "s:^export openstack_identity=.*:export openstack_identity='$openstack_identity':g" $CFG_FILE
-  sed -i "s:^export openstack_credential=.*:export openstack_credential='$openstack_credential':g" $CFG_FILE
-  sed -i "s:^export openstack_jclouds_endpoint=.*:export openstack_jclouds_endpoint='$openstack_jclouds_endpoint':g" $CFG_FILE
-  sed -i "s:^export openstack_keypair_name=.*:export openstack_keypair_name='$openstack_keypair_name':g" $CFG_FILE
-  sed -i "s:^export openstack_security_groups=.*:export openstack_security_groups='$openstack_security_groups':g" $CFG_FILE
-
-  # vCloud
-  sed -i "s:^export vcloud_provider_enabled=.*:export vcloud_provider_enabled='$vcloud_provider_enabled':g" $CFG_FILE
-  sed -i "s:^export vcloud_identity=.*:export vcloud_identity='$vcloud_identity':g" $CFG_FILE
-  sed -i "s:^export vcloud_credential=.*:export vcloud_credential='$vcloud_credential':g" $CFG_FILE
-  sed -i "s:^export vcloud_jclouds_endpoint=.*:export vcloud_jclouds_endpoint='$vcloud_jclouds_endpoint':g" $CFG_FILE
-    
-
-  cd $STRATOS_SETUP_PATH
-  chmod +x *.sh
-
-  [ -d $STRATOS_PATH ] || mkdir $STRATOS_PATH
-  echo '' | sudo ./setup.sh -p "default" -s
-
-  # fix bug where stratos can't be started over ssh connection
-  sed -i 's:\(nohup.*\)args >:\1args < /dev/null >:g' $STRATOS_PATH/apache-stratos-default/bin/stratos.sh
-
-  # fix bug where activemq can't be started over ssh connection
-  patch $STRATOS_PATH/apache-activemq-5.9.1/bin/activemq < /vagrant/stratos/activemq.patch
-
-  # turn off error handling for grep
-  trap - ERR
-  grep -q 'su -c "/home/vagrant/stratos.sh -s" -s /bin/sh vagrant' /etc/rc.local
-  if [ $? == 1 ]
-  then
-    read -d '' REPLACE << EOF
-su -c "/home/vagrant/stratos.sh -s" -s /bin/sh vagrant
-exit 0
-EOF
-    sudo perl -i.bak -pe 's~^exit 0~'"${REPLACE}"'~g' /etc/rc.local
-  fi
-
   popd
 }
 
 function start_servers() {
 
-  $STRATOS_PATH/apache-activemq-5.9.1/bin/activemq restart > /dev/null 2>&1
+  kill_servers
 
-  $STRATOS_PATH/apache-stratos-default/bin/stratos.sh -Dprofile=default --restart > /dev/null 2>&1
+  MB_ID=$(sudo docker run -p=61616:61616 -d apachestratos/activemq); sleep 2s;
+  MB_IP_ADDR=$(sudo docker inspect $MB_ID | grep IPAddress | cut -d '"' -f 4)
 
-  echo "Servers starting."
-  echo "Check status using: $progname -t"
-  echo "Logs:"
-  echo "  ActiveMQ -> ./stratos/apache-activemq-5.9.1/data/activemq.log"
-  echo "  Stratos  -> ./stratos/apache-stratos-default/repository/logs/wso2carbon.log"
+  USERSTORE_ID=$(sudo docker run -d -p 3306:3306 -e MYSQL_ROOT_PASSWORD=password apachestratos/mysql); sleep 2s;
+  USERSTORE_IP_ADDR=$(sudo docker inspect $USERSTORE_ID | grep IPAddress | cut -d '"' -f 4)
+
+  unset docker_env
+
+  # Database Settings
+  docker_env+=(-e "USERSTORE_DB_HOSTNAME=${USERSTORE_IP_ADDR}")
+  docker_env+=(-e "USERSTORE_DB_PORT=3306")
+  docker_env+=(-e "USERSTORE_DB_SCHEMA=USERSTORE_DB_SCHEMA")
+  docker_env+=(-e "USERSTORE_DB_USER=root")
+  docker_env+=(-e "USERSTORE_DB_PASS=password")
+
+  # Puppet Setings
+  docker_env+=(-e "PUPPET_IP=${PUPPET_IP_ADDR}")
+  docker_env+=(-e "PUPPET_HOSTNAME=${PUPPET_HOSTNAME}")
+  docker_env+=(-e "PUPPET_ENVIRONMENT=none")
+
+  # MB Settings
+  docker_env+=(-e "MB_HOSTNAME=${MB_IP_ADDR}")
+  docker_env+=(-e "MB_PORT=61616")
+
+  # read variables from iaas.conf, escaping colons to prevent later sed statements throwing an error
+  source <(sed 's/:/\\\\:/g' ${HOME}/iaas.conf)
+    
+  # IAAS Settings
+  docker_env+=(-e "EC2_ENABLED=$ec2_provider_enabled")
+  docker_env+=(-e "EC2_IDENTITY=$ec2_identity")
+  docker_env+=(-e "EC2_CREDENTIAL=$ec2_credential")
+  docker_env+=(-e "EC2_OWNER_ID=$ec2_owner_id")
+  docker_env+=(-e "EC2_AVAILABILITY_ZONE=$ec2_availability_zone")
+  docker_env+=(-e "EC2_SECURITY_GROUPS=$ec2_security_groups")
+  docker_env+=(-e "EC2_KEYPAIR=$ec2_keypair_name")
+
+  # Openstack
+  #sed -i "s:^export openstack_provider_enabled=.*:export openstack_provider_enabled='$openstack_provider_enabled':g" $CFG_FILE
+  #sed -i "s:^export openstack_identity=.*:export openstack_identity='$openstack_identity':g" $CFG_FILE
+  #sed -i "s:^export openstack_credential=.*:export openstack_credential='$openstack_credential':g" $CFG_FILE
+  #sed -i "s:^export openstack_jclouds_endpoint=.*:export openstack_jclouds_endpoint='$openstack_jclouds_endpoint':g" $CFG_FILE
+  #sed -i "s:^export openstack_keypair_name=.*:export openstack_keypair_name='$openstack_keypair_name':g" $CFG_FILE
+  #sed -i "s:^export openstack_security_groups=.*:export openstack_security_groups='$openstack_security_groups':g" $CFG_FILE
+
+  # vCloud
+  #sed -i "s:^export vcloud_provider_enabled=.*:export vcloud_provider_enabled='$vcloud_provider_enabled':g" $CFG_FILE
+  #sed -i "s:^export vcloud_identity=.*:export vcloud_identity='$vcloud_identity':g" $CFG_FILE
+  #sed -i "s:^export vcloud_credential=.*:export vcloud_credential='$vcloud_credential':g" $CFG_FILE
+  #sed -i "s:^export vcloud_jclouds_endpoint=.*:export vcloud_jclouds_endpoint='$vcloud_jclouds_endpoint':g" $CFG_FILE
+
+  # Stratos Settings [profile=default|cc|as|sm]
+  docker_env+=(-e "STRATOS_PROFILE=default")
+
+  # Start Stratos container as daemon
+  container_id=$(sudo docker run -d "${docker_env[@]}" -p 9443:9443 apachestratos/stratos)  
 }
 
 function kill_servers() {
 
-  # stop trapping errors.  if stopping stratos fails, still try to stop activemq
-  trap - ERR
+  stratos_container_ids=$(sudo docker ps -a | awk '{print $2, $1}' | grep '^apachestratos' | awk '{print $2}')
 
-  echo "Please wait - servers are shutting down." 
-  
-  $STRATOS_PATH/apache-stratos-default/bin/stratos.sh --stop > /dev/null 2>&1
-
-  $STRATOS_PATH/apache-activemq-5.9.1/bin/activemq stop > /dev/null 2>&1
-
-  stratos_pid=$(cat $STRATOS_PATH/apache-stratos-default/wso2carbon.pid)
-  
-  count=0
-  while ( $progname -t | grep -q 'Stratos is running' );  do 
-    echo 'Waiting for Stratos to stop running.'
-    let "count=count+1"
-    if [[ $count -eq 5 ]]; then
-      kill -SIGKILL $stratos_pid
-      break
-    fi 
-    sleep 10s
-    kill -SIGINT $stratos_pid
-  done
-
-  echo > $STRATOS_PATH/apache-stratos-default/wso2carbon.pid
-
-  # turn error handling back on
-  trap 'error ${LINENO}' ERR
-
-  echo "Servers stopped."
-  echo "  Check status using $progname -t"
-  echo "  Start again using $progname -s"
+  if [[ -n $stratos_container_ids ]]; then
+    sudo docker stop $stratos_container_ids
+    sudo docker rm $stratos_container_ids
+  fi
 }
 
 function servers_status() {
 
-  # ignore errors
-  trap - ERR
+  # TODO
+  sleep 1
 
-  $STRATOS_PATH/apache-activemq-5.9.1/bin/activemq status | tail -1
-
-  # find the stratos pid
-  stratos_pid=$(cat $STRATOS_PATH/apache-stratos-default/wso2carbon.pid)
-
-  # check all java running process pids
-  java_pids=$(pgrep -u $(whoami) -f java)
-
-  # if there is process running for statos 
-  echo $java_pids | grep -q "$stratos_pid"
-  if [ $? -eq 0 ]
-  then
-    echo "Stratos is running (pid '$stratos_pid')"
-  else
-    echo "Stratos is not running"
-  fi
-
-  echo "Logs:"
-  echo "  ActiveMQ -> ./stratos/apache-activemq-5.9.1/data/activemq.log"
-  echo "  Stratos  -> ./stratos/apache-stratos-default/repository/logs/wso2carbon.log"
 }
 
 function development_environment() {
@@ -663,12 +547,12 @@ function development_environment() {
    cd $HOME
 
    if [[ ! -e X11RDP-o-Matic ]]; then
-      #git clone https://github.com/scarygliders/X11RDP-o-Matic.git
-      #cd X11RDP-o-Matic
-      #sudo ./X11rdp-o-matic.sh --justdoit
+      wget -N -nv -P $STRATOS_PACK_PATH $X11RDP_URL
+      sudo dpkg -i $STRATOS_PACK_PATH/$(basename $X11RDP_URL)
 
       wget -N -nv -P $STRATOS_PACK_PATH $XRDP_URL
       sudo dpkg -i $STRATOS_PACK_PATH/$(basename $XRDP_URL)
+
       sudo /etc/init.d/xrdp start
       
       echo xfce4-session >~/.xsession
