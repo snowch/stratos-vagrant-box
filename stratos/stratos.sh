@@ -52,7 +52,13 @@ HAWTBUF_URL="http://repo1.maven.org/maven2/org/fusesource/hawtbuf/hawtbuf/1.2/ha
 MVN_SETTINGS="-s /vagrant/maven-settings.xml"
 
 XRDP_URL="https://github.com/snowch/X11RDP-o-Matic/releases/download/0.1/xrdp_0.9.0.master-1_amd64.deb"
+XRDP_SHA1="67f4558751a94b4bd787602530bd158ec6b3f3e7"
+
 X11RDP_URL="https://github.com/snowch/X11RDP-o-Matic/releases/download/0.1/x11rdp_0.9.0.master-1_amd64.deb"
+X11RDP_SHA1="2e049de90932fa5f5e35157728f870acedb62e65"
+
+
+
 
 ########################################################
 # You should not need to change anything below this line
@@ -442,6 +448,9 @@ function installer() {
   sudo cp -f $STRATOS_PACK_PATH/geronimo-jms_1.1_spec-1.1.1.jar /etc/puppet/modules/lb/files/
   sudo cp -f $STRATOS_PACK_PATH/$(basename $HAWTBUF_URL) /etc/puppet/modules/lb/files/
 
+  cd $STRATOS_SOURCE_PATH/tools/stratos-docker-images
+  ./build-all.sh
+
   popd
 }
 
@@ -540,24 +549,36 @@ function development_environment() {
 
    sudo apt-get update
    sudo apt-get upgrade -y
-   sudo apt-get install -y xubuntu-desktop xfce4 eclipse-jdt xvfb firefox gnome-terminal
+   sudo apt-get install -y xubuntu-desktop xfce4 eclipse-jdt xvfb firefox gnome-terminal sysv-rc-conf
 
    sudo ufw disable
 
    cd $HOME
 
-   if [[ ! -e X11RDP-o-Matic ]]; then
-      wget -N -nv -P $STRATOS_PACK_PATH $X11RDP_URL
-      sudo dpkg -i $STRATOS_PACK_PATH/$(basename $X11RDP_URL)
 
-      wget -N -nv -P $STRATOS_PACK_PATH $XRDP_URL
-      sudo dpkg -i $STRATOS_PACK_PATH/$(basename $XRDP_URL)
+   sha1=$(sha1sum  $STRATOS_PACK_PATH/$(basename $X11RDP_URL) | awk '{ print $1 }')
 
-      sudo /etc/init.d/xrdp start
-      
-      echo xfce4-session >~/.xsession
-      echo 'mode: off' > ~/.xscreensaver
+   if [[ $sha1 != $X11RDP_SHA1 ]]; then
+     rm -f $STRATOS_PACK_PATH/$(basename $X11RDP_URL)
+
+     wget -N -nv -P $STRATOS_PACK_PATH $X11RDP_URL
+     sudo dpkg -i $STRATOS_PACK_PATH/$(basename $X11RDP_URL)
    fi
+
+   sha1=$(sha1sum  $STRATOS_PACK_PATH/$(basename $XRDP_URL) | awk '{ print $1 }')
+
+   if [[ $sha1 != $XRDP_SHA1 ]]; then
+     rm -f $STRATOS_PACK_PATH/$(basename $XRDP_URL)
+
+     wget -N -nv -P $STRATOS_PACK_PATH $XRDP_URL
+     sudo dpkg -i $STRATOS_PACK_PATH/$(basename $XRDP_URL)
+
+     echo xfce4-session >~/.xsession
+     echo 'mode: off' > ~/.xscreensaver
+   fi
+
+   sudo update-rc.d x11rdp defaults
+   sudo /etc/init.d/xrdp start
 
    # switch off update manager popup
    # FIXME: this doesn't seem to work
