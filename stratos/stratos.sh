@@ -456,19 +456,22 @@ function installer() {
 
 function start_servers() {
 
+  echo Stopping Stratos docker images
   kill_servers
 
-  MB_ID=$(sudo docker run -p=61616:61616 -d apachestratos/activemq); sleep 2s;
-  MB_IP_ADDR=$(sudo docker inspect $MB_ID | grep IPAddress | cut -d '"' -f 4)
+  MB_ID=$(sudo docker run -p 61616 -d apachestratos/activemq); sleep 2s;
+  MB_IP_ADDR=$(sudo docker inspect --format '{{ .NetworkSettings.Gateway }}' $MB_ID)
+  MB_PORT=$(sudo docker port $MB_ID 61616 | awk -F':' '{ print $2 }')
 
-  USERSTORE_ID=$(sudo docker run -d -p 3306:3306 -e MYSQL_ROOT_PASSWORD=password apachestratos/mysql); sleep 2s;
-  USERSTORE_IP_ADDR=$(sudo docker inspect $USERSTORE_ID | grep IPAddress | cut -d '"' -f 4)
+  USERSTORE_ID=$(sudo docker run -d -p 3306 -e MYSQL_ROOT_PASSWORD=password apachestratos/mysql); sleep 2s;
+  USERSTORE_IP_ADDR=$(sudo docker inspect --format '{{ .NetworkSettings.Gateway }}' $USERSTORE_ID)
+  USERSTORE_PORT=$(sudo docker port $USERSTORE_ID 3306 | awk -F':' '{ print $2 }')
 
   unset docker_env
 
   # Database Settings
   docker_env+=(-e "USERSTORE_DB_HOSTNAME=${USERSTORE_IP_ADDR}")
-  docker_env+=(-e "USERSTORE_DB_PORT=3306")
+  docker_env+=(-e "USERSTORE_DB_PORT=${USERSTORE_PORT}")
   docker_env+=(-e "USERSTORE_DB_SCHEMA=USERSTORE_DB_SCHEMA")
   docker_env+=(-e "USERSTORE_DB_USER=root")
   docker_env+=(-e "USERSTORE_DB_PASS=password")
@@ -480,7 +483,7 @@ function start_servers() {
 
   # MB Settings
   docker_env+=(-e "MB_HOSTNAME=${MB_IP_ADDR}")
-  docker_env+=(-e "MB_PORT=61616")
+  docker_env+=(-e "MB_PORT=${MB_PORT}")
 
   # read variables from iaas.conf, escaping colons to prevent later sed statements throwing an error
   source <(sed 's/:/\\\\:/g' ${HOME}/iaas.conf)
@@ -495,24 +498,42 @@ function start_servers() {
   docker_env+=(-e "EC2_KEYPAIR=$ec2_keypair_name")
 
   # Openstack
-  #sed -i "s:^export openstack_provider_enabled=.*:export openstack_provider_enabled='$openstack_provider_enabled':g" $CFG_FILE
-  #sed -i "s:^export openstack_identity=.*:export openstack_identity='$openstack_identity':g" $CFG_FILE
-  #sed -i "s:^export openstack_credential=.*:export openstack_credential='$openstack_credential':g" $CFG_FILE
-  #sed -i "s:^export openstack_jclouds_endpoint=.*:export openstack_jclouds_endpoint='$openstack_jclouds_endpoint':g" $CFG_FILE
-  #sed -i "s:^export openstack_keypair_name=.*:export openstack_keypair_name='$openstack_keypair_name':g" $CFG_FILE
-  #sed -i "s:^export openstack_security_groups=.*:export openstack_security_groups='$openstack_security_groups':g" $CFG_FILE
+  docker_env+=(-e "OPENSTACK_ENABLED=$openstack_provider_enabled")
+  docker_env+=(-e "OPENSTACK_IDENTITY=$openstack_identity")
+  docker_env+=(-e "OPENSTACK_CREDENTIAL=$openstack_credential")
+  docker_env+=(-e "OPENSTACK_ENDPOINT=$openstack_jclouds_endpoint")
+  #docker_env+=(-e "OPENSTACK_KEYPAIR_NAME=$openstack_keypair_name")
+  #docker_env+=(-e "OPENSTACK_SECURITY_GROUPS=$openstack_security_groups")
 
   # vCloud
-  #sed -i "s:^export vcloud_provider_enabled=.*:export vcloud_provider_enabled='$vcloud_provider_enabled':g" $CFG_FILE
-  #sed -i "s:^export vcloud_identity=.*:export vcloud_identity='$vcloud_identity':g" $CFG_FILE
-  #sed -i "s:^export vcloud_credential=.*:export vcloud_credential='$vcloud_credential':g" $CFG_FILE
-  #sed -i "s:^export vcloud_jclouds_endpoint=.*:export vcloud_jclouds_endpoint='$vcloud_jclouds_endpoint':g" $CFG_FILE
+  docker_env+=(-e "VCLOUD_ENABLED=$vcloud_provider_enabled")
+  docker_env+=(-e "VCLOUD_IDENTITY=$vcloud_identity")
+  docker_env+=(-e "VCLOUD_CREDENTIAL=$vcloud_credential")
+  docker_env+=(-e "VCLOUD_JCLOUDS_ENDPOINT=$vcloud_jclouds_endpoint")
 
   # Stratos Settings [profile=default|cc|as|sm]
   docker_env+=(-e "STRATOS_PROFILE=default")
 
   # Start Stratos container as daemon
   container_id=$(sudo docker run -d "${docker_env[@]}" -p 9443:9443 apachestratos/stratos)  
+
+  echo -n Starting Stratos docker images 
+  timer=0
+  success=1
+  while [[ $(curl -s --insecure -3 -o /dev/null -I -w "%{http_code}" https://localhost:9443/console/login) != 200 ]]; do 
+    echo -n .
+    sleep 10s
+    timer=$((timer + 10))
+    if (( $timer > 600 )); then
+      printf "\nTime out waiting for Stratos to start\n"
+      success=0
+      break
+    fi
+  done
+  if [[ $success = 1 ]]; then
+    printf "\nStratos docker images have started\n"
+  fi
+ 
 }
 
 function kill_servers() {
@@ -544,9 +565,6 @@ function development_environment() {
      exit 1
    fi
 
-   # make sure stratos isn't running because it will block the jvm debugger
-   kill_servers
-
    sudo apt-get update
    sudo apt-get upgrade -y
    sudo apt-get install -y xubuntu-desktop xfce4 eclipse-jdt xvfb firefox gnome-terminal sysv-rc-conf
@@ -555,29 +573,26 @@ function development_environment() {
 
    cd $HOME
 
-
    sha1=$(sha1sum  $STRATOS_PACK_PATH/$(basename $X11RDP_URL) | awk '{ print $1 }')
 
    if [[ $sha1 != $X11RDP_SHA1 ]]; then
      rm -f $STRATOS_PACK_PATH/$(basename $X11RDP_URL)
-
      wget -N -nv -P $STRATOS_PACK_PATH $X11RDP_URL
-     sudo dpkg -i $STRATOS_PACK_PATH/$(basename $X11RDP_URL)
    fi
+   sudo dpkg -i $STRATOS_PACK_PATH/$(basename $X11RDP_URL)
 
    sha1=$(sha1sum  $STRATOS_PACK_PATH/$(basename $XRDP_URL) | awk '{ print $1 }')
 
    if [[ $sha1 != $XRDP_SHA1 ]]; then
      rm -f $STRATOS_PACK_PATH/$(basename $XRDP_URL)
-
      wget -N -nv -P $STRATOS_PACK_PATH $XRDP_URL
-     sudo dpkg -i $STRATOS_PACK_PATH/$(basename $XRDP_URL)
-
-     echo xfce4-session >~/.xsession
-     echo 'mode: off' > ~/.xscreensaver
    fi
+   sudo dpkg -i $STRATOS_PACK_PATH/$(basename $XRDP_URL)
 
-   sudo update-rc.d x11rdp defaults
+   echo xfce4-session > ~/.xsession
+   echo 'mode: off' > ~/.xscreensaver
+
+   sudo update-rc.d xrdp defaults
    sudo /etc/init.d/xrdp start
 
    # switch off update manager popup
