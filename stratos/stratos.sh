@@ -107,8 +107,6 @@ function main() {
       w) downloads; exit $? ;;
       c) checkout; exit $? ;;
       b) maven_clean_install; exit $? ;;
-      m) puppet_base_setup; exit $? ;;
-      p) puppet_stratos_setup; exit $? ;;
       n) installer; exit $? ;;
       d) development_environment; exit $? ;;
       s) start_servers; exit $? ;;
@@ -124,7 +122,7 @@ function main() {
 
 function usage () {
    cat <<EOF
-Usage: $progname -[f|w|c|b|m|p|n|d|h]
+Usage: $progname -[f|w|c|b|n|d|h]
 
 Where:
        ----------------------------------------------------------------
@@ -139,7 +137,7 @@ Where:
     -f perform a complete setup of the stratos runtime environment
 
        This command is the same as running:
-       $progname -m && $progname -w && $progname -c && $progname -b && $progname -p && $progname -n
+       $progname -w && $progname -c && $progname -b && $progname -n
 
     -w Download pre-requisite files such as MYSQLJ
 
@@ -149,11 +147,6 @@ Where:
 
     -b Builds Stratos.  Equivalent to running: 'mvn clean install'
        You will probably want to re-run this after you modify or pull new source 
-
-    -m Setup base puppet master
-
-    -p Setup puppet master for Stratos. 
-       You will probably want to re-run this after you re-build Stratos.
 
     -n Install Stratos and CLI (and startup Stratos).
        You will probably want to re-run this after you re-setup Puppet.
@@ -255,198 +248,24 @@ function prerequisites() {
   . .profile
 }
 
-function puppet_base_setup() {
-
-  echo -e "\e[32mSetting up puppet master base\e[39m"
-
-  pushd $PWD
-  cd ${HOME}
-
-  sudo apt-get update
-  sudo apt-get install -y git
-  # bc is required - see https://github.com/thilinapiy/puppetinstall/issues/6 
-  sudo apt-get install -y bc
-
-  # FIXME make this idempotent - i.e. same result each time it is run
-  if [ ! -d puppetinstall ]
-  then
-    git clone https://github.com/thilinapiy/puppetinstall
-    cd puppetinstall
-    echo '' | sudo ./puppetinstall -m -d $DOMAINNAME -s $PUPPET_IP_ADDR
-  fi
-
-  [ -d /etc/puppet/modules/agent/files ] || sudo mkdir -p /etc/puppet/modules/agent/files
-  [ -d /etc/puppet/modules/java/files ] || sudo mkdir -p /etc/puppet/modules/java/files
-  [ -d /etc/puppet/modules/tomcat/files ] || sudo mkdir -p /etc/puppet/modules/tomcat/files
-
-  #if [ "$(arch)" == "x86_64" ]
-  #then
-  #  JAVA_ARCH="x64"
-  #else
-  #  JAVA_ARCH="i586"
-  #fi
-
-  # WARNING: currently Stratos only supports 64 bit cartridges
-  JAVA_ARCH="x64"
-
-  JDK="jdk-7u51-linux-${JAVA_ARCH}.tar.gz" 
-  JDK_SHA1="bee3b085a90439c833ce18e138c9f1a615152891"
-
-
-  download_jdk="true"
-  if [[ -e $STRATOS_PACK_PATH/$JDK ]]; then
-    echo "Found JDK in $STRATOS_PACK_PATH folder, so not downloading again."
-    sha1=$(sha1sum $STRATOS_PACK_PATH/$JDK | cut -d' ' -f1)
-
-    if [[ "$sha1" == "$JDK_SHA1" ]]; then
-       download_jdk="false"
-    else
-       rm $STRATOS_PACK_PATH/$JDK
-    fi
-  fi
- 
-  if [[ $download_jdk == "true" ]]; then
- 
-       # Oracle download is so unreliable we need to be a bit more informative with the error feedback
-       trap - ERR
-
-       echo 'Downloading Oracle JDK'
-       wget -N -nv -c -P $STRATOS_PACK_PATH \
-            --no-cookies --no-check-certificate \
-            --header "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie" \
-            "http://download.oracle.com/otn-pub/java/jdk/7u51-b13/${JDK}"
-
-       if [ $? -ne 0 ]
-       then
-         echo "Failed to download Oracle JDK."
-         echo "Please retry later, or manually download to the $STRATOS_PACK_PATH folder"
-         exit 1
-       fi
-       trap 'error ${LINENO}' ERR
-  fi
-
-  # make the JDK available to puppet
-  sudo cp -f ${STRATOS_PACK_PATH}/${JDK} /etc/puppet/modules/java/files/
-
-  # download tomcat
-  wget -N -nv -c -P $STRATOS_PACK_PATH $TOMCAT_URL
-
-  # make tomcat available to puppet
-  sudo cp -f ${STRATOS_PACK_PATH}/$(basename $TOMCAT_URL) /etc/puppet/modules/tomcat/files/
-
-  # add unqualified hostname to /etc/hosts because that isn't done by puppetinstall
-  sudo sed -i -e "s@puppet.${DOMAINNAME}\s*\$@puppet.${DOMAINNAME} puppet@g" /etc/hosts
-
-  sudo sh -c "echo \"*.$DOMAINNAME\" > /etc/puppet/autosign.conf"
-
-  echo -e "\e[32mFinished setting up puppet master base\e[39m"
-
-  popd
-
-}
-
-function puppet_stratos_setup() {
-
-  echo -e "\e[32mSetting up puppet master for Stratos\e[39m"
-
-
-  pushd $PWD
-
-  # Stratos specific puppet setup
-
-  sudo cp -rf $STRATOS_SOURCE_PATH/tools/puppet3/manifests/* /etc/puppet/manifests/
-  sudo cp -rf $STRATOS_SOURCE_PATH/tools/puppet3/modules/* /etc/puppet/modules/
-  sudo cp -f $STRATOS_SOURCE_PATH/products/cartridge-agent/modules/distribution/target/apache-stratos-cartridge-agent-*.zip /etc/puppet/modules/agent/files
-  sudo cp -f $STRATOS_SOURCE_PATH/products/load-balancer/modules/distribution/target/apache-stratos-load-balancer-*.zip /etc/puppet/modules/agent/files
-
-  # WARNING: currently Stratos only supports 64 bit cartridges
-  JAVA_ARCH="x64"
-
-  GIT_BRANCH=$(git --git-dir /home/vagrant/stratos-source/.git symbolic-ref --short HEAD)
-
-  if [[ $GIT_BRANCH == "4.0"* ]]; then
-    PUPPET_FILE=/etc/puppet/manifests/nodes.pp
-  else
-    PUPPET_FILE=/etc/puppet/manifests/nodes/base.pp
-  fi
-
-  sudo sed -i -E "s:(\s*[$]java_name.*=).*$:\1 \"jdk1.7.0_51\":g" $PUPPET_FILE
-  sudo sed -i -E "s:(\s*[$]java_distribution.*=).*$:\1 \"jdk-7u51-linux-${JAVA_ARCH}.tar.gz\":g" $PUPPET_FILE
-
-  sudo sed -i -E "s:(\s*[$]local_package_dir.*=).*$:\1 \"$STRATOS_PACK_PATH\":g" $PUPPET_FILE
-  sudo sed -i -E "s:(\s*[$]mb_ip.*=).*$:\1 \"$IP_ADDR\":g" $PUPPET_FILE
-  sudo sed -i -E "s:(\s*[$]mb_port.*=).*$:\1 \"$MB_PORT\":g" $PUPPET_FILE
-  # TODO move hardcoded strings to variables
-  sudo sed -i -E "s:(\s*[$]truststore_password.*=).*$:\1 \"wso2carbon\":g" $PUPPET_FILE
-
-  popd 
-
-  echo -e "\e[32mFinished setting up puppet\e[39m"
-}
-
 function installer() {
 
   echo -e "\e[32mRunning Stratos Installer\e[39m"
 
   pushd $PWD
 
-  sudo rm -rf $STRATOS_PATH
+  rm -rf $HOME/cli
+  mkdir -p $HOME/cli 
 
-  [ -d $STRATOS_SETUP_PATH ] || mkdir $STRATOS_SETUP_PATH
-  [ -d /etc/puppet/modules/agent/files/ ] || sudo mkdir -p /etc/puppet/modules/agent/files/
-  [ -d /etc/puppet/modules/agent/files/activemq ] || sudo mkdir -p /etc/puppet/modules/agent/files/activemq
-
+  # extract cli zip file
+  cli_file=$(find $STRATOS_SOURCE_PATH/products/stratos-cli/distribution/target/apache-stratos-cli-*.zip)
+  unzip $cli_file -d $HOME/cli
+  STRATOS_CLI_HOME=$HOME/cli/$(basename $cli_file)
+ 
   # TODO use sed line replacement
   grep -q '^export STRATOS_CLI_HOME' ~/.profile || echo "export STRATOS_CLI_HOME=$STRATOS_CLI_HOME" >> ~/.profile
   . ~/.profile
   export STRATOS_CLI_HOME
-
-  # extract cli zip file
-  cli_file=$(find $STRATOS_SOURCE_PATH/products/stratos-cli/distribution/target/apache-stratos-cli-*.zip)
-  rm -rf $STRATOS_PATH/$(basename $cli_file)
-  unzip $cli_file -d $STRATOS_PATH
-  STRATOS_CLI_HOME=$STRATOS_PATH/$(basename $cli_file)
- 
-  sudo cp -f $STRATOS_SOURCE_PATH/products/cartridge-agent/modules/distribution/target/apache-stratos-cartridge-agent-*.zip /etc/puppet/modules/agent/files/
-  sudo cp -f $STRATOS_SOURCE_PATH/products/load-balancer/modules/distribution/target/apache-stratos-load-balancer-*.zip /etc/puppet/modules/lb/files/
-
-  if [ ! -e $STRATOS_PACK_PATH/$(basename $ACTIVEMQ_URL) ]
-  then
-     echo "Downloading $ACTIVEMQ_URL/$ACTIVEMQ_FILE"
-     wget -N -nv -P $STRATOS_PACK_PATH $ACTIVEMQ_URL
-  fi
-
-  if [ -e tmp-activemq ] 
-  then
-    # clean up from any previous installation attempts
-    rm -rf tmp-activemq
-  fi
-  mkdir tmp-activemq
-  tar -C tmp-activemq -xzf $STRATOS_PACK_PATH/$(basename $ACTIVEMQ_URL) 
-  cp -f tmp-activemq/apache-activemq-5.9.1/lib/activemq-broker-5.9.1.jar $STRATOS_PACK_PATH/
-  cp -f tmp-activemq/apache-activemq-5.9.1/lib/activemq-client-5.9.1.jar $STRATOS_PACK_PATH/
-  cp -f tmp-activemq/apache-activemq-5.9.1/lib/geronimo-j2ee-management_1.1_spec-1.0.1.jar $STRATOS_PACK_PATH/
-  cp -f tmp-activemq/apache-activemq-5.9.1/lib/geronimo-jms_1.1_spec-1.1.1.jar $STRATOS_PACK_PATH/
-  rm -rf tmp-activemq
-
-  if [ ! -e $STRATOS_PACK_PATH/$(basename $HAWTBUF_URL) ]
-  then
-     echo "Downloading $HAWTBUF_URL"
-     wget -N -nv -P $STRATOS_PACK_PATH $HAWTBUF_URL
-  fi
-
-  # TODO refactor this duplicated code
-  sudo cp -f $STRATOS_PACK_PATH/activemq-broker-5.9.1.jar /etc/puppet/modules/agent/files/activemq/
-  sudo cp -f $STRATOS_PACK_PATH/activemq-client-5.9.1.jar /etc/puppet/modules/agent/files/activemq/
-  sudo cp -f $STRATOS_PACK_PATH/geronimo-j2ee-management_1.1_spec-1.0.1.jar /etc/puppet/modules/agent/files/activemq/
-  sudo cp -f $STRATOS_PACK_PATH/geronimo-jms_1.1_spec-1.1.1.jar /etc/puppet/modules/agent/files/activemq/
-  sudo cp -f $STRATOS_PACK_PATH/$(basename $HAWTBUF_URL) /etc/puppet/modules/agent/files/activemq/
-
-  sudo cp -f $STRATOS_PACK_PATH/activemq-broker-5.9.1.jar /etc/puppet/modules/lb/files/
-  sudo cp -f $STRATOS_PACK_PATH/activemq-client-5.9.1.jar /etc/puppet/modules/lb/files/
-  sudo cp -f $STRATOS_PACK_PATH/geronimo-j2ee-management_1.1_spec-1.0.1.jar /etc/puppet/modules/lb/files/
-  sudo cp -f $STRATOS_PACK_PATH/geronimo-jms_1.1_spec-1.1.1.jar /etc/puppet/modules/lb/files/
-  sudo cp -f $STRATOS_PACK_PATH/$(basename $HAWTBUF_URL) /etc/puppet/modules/lb/files/
 
   cd $STRATOS_SOURCE_PATH/tools/stratos-docker-images
   ./build-all.sh
@@ -558,12 +377,6 @@ function development_environment() {
    pushd $PWD
 
    echo -e "\e[32mSetting up development environment.\e[39m"
-
-   if [ ! -d ${STRATOS_PATH} ]
-   then
-     echo "It appears that Stratos has not been installed yet, so quitting."
-     exit 1
-   fi
 
    sudo apt-get update
    sudo apt-get upgrade -y
@@ -710,12 +523,10 @@ function force_clean () {
 function initial_setup() {
    
    echo -e "\e[32mPerforming initial setup.\e[39m"
-   puppet_base_setup
    downloads   
    prerequisites
    checkout
    maven_clean_install
-   puppet_stratos_setup # has a dependency on maven_clean_install
    installer
 }
 

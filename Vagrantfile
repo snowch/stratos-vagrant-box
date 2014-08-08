@@ -30,8 +30,7 @@ Vagrant.configure("2") do |config|
     # 64 bit machine
     config.vm.box = "chef/ubuntu-14.04"
 
-    # puppetinstall scripts hardcode the guest name to 'puppet.$DOMAIN' so lets keep with that
-    config.vm.hostname = "puppet.stratos.com"
+    config.vm.hostname = "vagrant.stratos.com"
 
     # Use vagrant cachier if it is available - it will speed up repeated 
     # 'vagrant destroy' and 'vagrant up' calls
@@ -70,6 +69,8 @@ Vagrant.configure("2") do |config|
     # virtualbox customisations
     config.vm.provider "virtualbox" do |v|
       v.customize ["modifyvm", :id, "--memory", 4096 ]
+
+      v.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
 
       # uncomment these to use the virtualbox gui:
       # v.gui = true
