@@ -234,6 +234,9 @@ function prerequisites() {
   sudo ln -sf /usr/bin/docker.io /usr/local/bin/docker
   sudo sed -i '$acomplete -F _docker docker' /etc/bash_completion.d/docker
 
+  sudo gpasswd -a ${USER} docker
+  sudo service docker restart 
+
   if [ "$(arch)" != "x86_64" ]
   then
     fix_git_tls_bug
@@ -268,7 +271,7 @@ function installer() {
   export STRATOS_CLI_HOME
 
   cd $STRATOS_SOURCE_PATH/tools/stratos-docker-images
-  ./build-all.sh
+  mvn install -Pdocker-build
 
   popd
 }
@@ -278,63 +281,7 @@ function start_servers() {
   echo Stopping Stratos docker images
   kill_servers
 
-  MB_ID=$(sudo docker run -p 61616 -d apachestratos/activemq); sleep 2s;
-  MB_IP_ADDR=$(sudo docker inspect --format '{{ .NetworkSettings.Gateway }}' $MB_ID)
-  MB_PORT=$(sudo docker port $MB_ID 61616 | awk -F':' '{ print $2 }')
-
-  USERSTORE_ID=$(sudo docker run -d -p 3306 -e MYSQL_ROOT_PASSWORD=password apachestratos/mysql); sleep 2s;
-  USERSTORE_IP_ADDR=$(sudo docker inspect --format '{{ .NetworkSettings.Gateway }}' $USERSTORE_ID)
-  USERSTORE_PORT=$(sudo docker port $USERSTORE_ID 3306 | awk -F':' '{ print $2 }')
-
-  unset docker_env
-
-  # Database Settings
-  docker_env+=(-e "USERSTORE_DB_HOSTNAME=${USERSTORE_IP_ADDR}")
-  docker_env+=(-e "USERSTORE_DB_PORT=${USERSTORE_PORT}")
-  docker_env+=(-e "USERSTORE_DB_SCHEMA=USERSTORE_DB_SCHEMA")
-  docker_env+=(-e "USERSTORE_DB_USER=root")
-  docker_env+=(-e "USERSTORE_DB_PASS=password")
-
-  # Puppet Setings
-  docker_env+=(-e "PUPPET_IP=${PUPPET_IP_ADDR}")
-  docker_env+=(-e "PUPPET_HOSTNAME=${PUPPET_HOSTNAME}")
-  docker_env+=(-e "PUPPET_ENVIRONMENT=none")
-
-  # MB Settings
-  docker_env+=(-e "MB_HOSTNAME=${MB_IP_ADDR}")
-  docker_env+=(-e "MB_PORT=${MB_PORT}")
-
-  # read variables from iaas.conf, escaping colons to prevent later sed statements throwing an error
-  source <(sed 's/:/\\\\:/g' ${HOME}/iaas.conf)
-    
-  # IAAS Settings
-  docker_env+=(-e "EC2_ENABLED=$ec2_provider_enabled")
-  docker_env+=(-e "EC2_IDENTITY=$ec2_identity")
-  docker_env+=(-e "EC2_CREDENTIAL=$ec2_credential")
-  docker_env+=(-e "EC2_OWNER_ID=$ec2_owner_id")
-  docker_env+=(-e "EC2_AVAILABILITY_ZONE=$ec2_availability_zone")
-  docker_env+=(-e "EC2_SECURITY_GROUPS=$ec2_security_groups")
-  docker_env+=(-e "EC2_KEYPAIR=$ec2_keypair_name")
-
-  # Openstack
-  docker_env+=(-e "OPENSTACK_ENABLED=$openstack_provider_enabled")
-  docker_env+=(-e "OPENSTACK_IDENTITY=$openstack_identity")
-  docker_env+=(-e "OPENSTACK_CREDENTIAL=$openstack_credential")
-  docker_env+=(-e "OPENSTACK_ENDPOINT=$openstack_jclouds_endpoint")
-  #docker_env+=(-e "OPENSTACK_KEYPAIR_NAME=$openstack_keypair_name")
-  #docker_env+=(-e "OPENSTACK_SECURITY_GROUPS=$openstack_security_groups")
-
-  # vCloud
-  docker_env+=(-e "VCLOUD_ENABLED=$vcloud_provider_enabled")
-  docker_env+=(-e "VCLOUD_IDENTITY=$vcloud_identity")
-  docker_env+=(-e "VCLOUD_CREDENTIAL=$vcloud_credential")
-  docker_env+=(-e "VCLOUD_JCLOUDS_ENDPOINT=$vcloud_jclouds_endpoint")
-
-  # Stratos Settings [profile=default|cc|as|sm]
-  docker_env+=(-e "STRATOS_PROFILE=default")
-
-  # Start Stratos container as daemon
-  container_id=$(sudo docker run -d "${docker_env[@]}" -p 9443:9443 apachestratos/stratos)  
+  $STRATOS_SOURCE_PATH/tools/stratos-docker-images/run-example.sh
 
   echo -n Starting Stratos docker images 
   timer=0
@@ -357,12 +304,8 @@ function start_servers() {
 
 function kill_servers() {
 
-  stratos_container_ids=$(sudo docker ps -a | awk '{print $2, $1}' | grep '^apachestratos' | awk '{print $2}')
+  $STRATOS_SOURCE_PATH/tools/stratos-docker-images/stop_stratos_containers.sh
 
-  if [[ -n $stratos_container_ids ]]; then
-    sudo docker stop $stratos_container_ids
-    sudo docker rm $stratos_container_ids
-  fi
 }
 
 function servers_status() {
